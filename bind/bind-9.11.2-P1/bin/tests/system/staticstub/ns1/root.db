@@ -1,0 +1,16 @@
+; Copyright (C) 2010, 2016  Internet Systems Consortium, Inc. ("ISC")
+;
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this
+; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+; $Id: root.db,v 1.1 2010/12/17 00:57:38 marka Exp $
+
+$TTL	120
+@		SOA	ns.utld hostmaster.ns.utld ( 46 3600 1200 604800 60 )
+@		NS	ns.utld
+ns.utld		A	10.53.0.1
+;
+example.com.	NS	example.
+
+ns.example.net.	A	10.53.0.3

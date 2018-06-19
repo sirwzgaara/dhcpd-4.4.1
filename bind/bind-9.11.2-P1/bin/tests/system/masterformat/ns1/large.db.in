@@ -1,0 +1,19 @@
+; Copyright (C) 2012, 2016  Internet Systems Consortium, Inc. ("ISC")
+;
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this
+; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+; $Id: large.db.in,v 1.3 2012/02/14 23:47:15 tbox Exp $
+
+$TTL 1D
+
+@			IN SOA	ns hostmaster (
+				1
+				3600
+				1800
+				1814400
+				3
+				)
+			NS	ns
+ns			A	10.53.0.1

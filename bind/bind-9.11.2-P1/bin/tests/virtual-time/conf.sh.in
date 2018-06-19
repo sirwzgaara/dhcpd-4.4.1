@@ -1,0 +1,44 @@
+#!/bin/sh
+#
+# Copyright (C) 2010, 2012, 2016  Internet Systems Consortium, Inc. ("ISC")
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# $Id: conf.sh.in,v 1.3 2010/06/21 02:31:45 marka Exp $
+
+#
+# Common configuration data for system tests, to be sourced into
+# other shell scripts.
+#
+
+# Find the top of the BIND9 tree.
+TOP=${SYSTEMTESTTOP:=.}/../../..
+
+# Make it absolute so that it continues to work after we cd.
+TOP=`cd $TOP && pwd`
+
+NAMED=$TOP/bin/named/named
+# We must use "named -l" instead of "lwresd" because argv[0] is lost
+# if the program is libtoolized.
+LWRESD="$TOP/bin/named/named -l"
+DIG=$TOP/bin/dig/dig
+RNDC=$TOP/bin/rndc/rndc
+NSUPDATE=$TOP/bin/nsupdate/nsupdate
+DDNSCONFGEN=$TOP/bin/confgen/ddns-confgen
+KEYGEN=$TOP/bin/dnssec/dnssec-keygen
+SIGNER=$TOP/bin/dnssec/dnssec-signzone
+REVOKE=$TOP/bin/dnssec/dnssec-revoke
+SETTIME=$TOP/bin/dnssec/dnssec-settime
+DSFROMKEY=$TOP/bin/dnssec/dnssec-dsfromkey
+CHECKZONE=$TOP/bin/check/named-checkzone
+CHECKCONF=$TOP/bin/check/named-checkconf
+
+SUBDIRS="slave autosign-zsk autosign-ksk"
+
+# PERL will be an empty string if no perl interpreter was found.
+PERL=@PERL@
+
+export NAMED LWRESD DIG NSUPDATE KEYGEN SIGNER KEYSIGNER KEYSETTOOL PERL \
+    SUBDIRS RNDC CHECKZONE

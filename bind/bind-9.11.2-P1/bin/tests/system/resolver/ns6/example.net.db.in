@@ -1,0 +1,20 @@
+; Copyright (C) 2010, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+;
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this
+; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+; $Id: example.net.db.in,v 1.3 2010/11/17 23:47:08 tbox Exp $
+
+$TTL 600
+@	IN SOA	ns hostmaster 1 1800 900 604800 600
+@	IN NS	ns
+@	IN MX	0 mail
+ns	IN A	10.53.0.6
+mail	IN A	10.53.0.6
+fetch 10 IN TXT A short ttl
+non-zero 10 IN TXT A short ttl
+zero 0  IN TXT	A zero ttl
+$TTL 10
+ds 	IN NS	ns.ds
+ns.ds	IN A	10.53.0.6

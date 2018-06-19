@@ -1,0 +1,11 @@
+; Copyright (C) 2012, 2016  Internet Systems Consortium, Inc. ("ISC")
+;
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this
+; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+; $Id$
+
+$TTL 999999
+.			 IN NS	d.root-servers.nil.
+d.root-servers.nil.	 IN A	10.53.0.4

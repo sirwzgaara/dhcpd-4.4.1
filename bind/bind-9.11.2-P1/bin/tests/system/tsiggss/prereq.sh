@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# Copyright (C) 2010-2012, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+SYSTEMTESTTOP=..
+. $SYSTEMTESTTOP/conf.sh
+
+# enable the tsiggss test only if gssapi was enabled
+$FEATURETEST --gssapi ||  {
+        echo "I:gssapi and krb5 not supported - skipping tsiggss test"
+        exit 255
+}
+
+# ... and crypto
+exec $SHELL ../testcrypto.sh

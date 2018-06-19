@@ -1,0 +1,38 @@
+/*
+ * Copyright (C) 2011, 2016  Internet Systems Consortium, Inc. ("ISC")
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+/* $Id: dnssec.3,v 1.5 2011/11/07 00:14:11 marka Exp $ */
+
+options {
+	dnssec-validation no;
+};
+
+view view1 {
+	match-clients { any; };
+	dnssec-enable no;
+};
+
+view view2 {
+	match-clients { none; };
+	dnssec-enable yes;
+};
+
+view view3 {
+	match-clients { none; };
+	dnssec-lookaside auto;
+};
+
+view view4 {
+	match-clients { none; };
+	dnssec-lookaside no;
+};
+
+view view5 {
+	match-clients { none; };
+	auto-dnssec off;
+};

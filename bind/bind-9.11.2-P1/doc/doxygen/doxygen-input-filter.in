@@ -1,0 +1,52 @@
+#!@PERL@ -w
+#
+# Copyright (C) 2006, 2007, 2012, 2016  Internet Systems Consortium, Inc. ("ISC")
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# $Id: doxygen-input-filter.in,v 1.4 2007/06/19 23:47:13 tbox Exp $
+
+# Input filter for feeding our source code into Doxygen.
+
+# Slurp whole file at once
+undef $/;
+$_ = <>;
+
+# It turns out that there are a lot of cases where we'd really like to
+# use what Doxygen calls "brief" documentation in a comment.  Doxygen
+# has a shorthand way of doing this -- if one is writing C++.  ISC
+# coding conventions require C, not C++, so we have to do it the
+# verbose way, which makes a lot of comments too long to fit on a
+# single line without violating another ISC coding standard (80
+# character line limit).
+#
+# So we use Doxygen's input filter mechanism to define our own
+# brief comment convention:
+#
+#	/*% foo */
+#
+# expands to
+#
+#	/*! \brief foo */
+#
+# and
+#
+#	/*%< foo */
+#
+# expands to
+#
+#	/*!< \brief foo */
+#
+s{/\*%(<?)}{/*!$1 \\brief }g;
+
+# Doxygen appears to strip trailing newlines when reading files
+# directly but not when reading from an input filter.  Go figure.
+# Future versions of Doxygen might change this, be warned.
+#
+s{\n+\z}{};
+
+# Done, send the result to Doxygen.
+#
+print;
