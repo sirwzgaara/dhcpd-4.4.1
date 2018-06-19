@@ -510,7 +510,7 @@ void dhcprequest
 	int ours = 0;
 	struct option_cache *oc;
 	struct data_string data;
-	char msgbuf [1024]; /* XXX */
+	char msgbuf[1024];
 	const char *s;
 	char smbuf [19];
 #if defined (FAILOVER_PROTOCOL)
