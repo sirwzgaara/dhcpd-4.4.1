@@ -1191,6 +1191,7 @@ void new_address_range
 			}
 			lease_reference(lpchain, lp, MDL);
 		}
+		
 		lease_dereference(&lp, MDL);
 	}
 }

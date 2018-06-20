@@ -3956,61 +3956,73 @@ void parse_address_range
 		/* If we're permitting dynamic bootp for this range,
 		   then look for a pool with an empty prohibit list and
 		   a permit list with one entry that permits all clients. */
-		for (pool = share -> pools; pool; pool = pool -> next) {
-			if ((!dynamic && !pool -> permit_list && 
-			     pool -> prohibit_list &&
-			     !pool -> prohibit_list -> next &&
-			     (pool -> prohibit_list -> type ==
+		for (pool = share->pools; pool; pool = pool->next) 
+		{
+			if ((!dynamic && !pool->permit_list && 
+			     pool->prohibit_list &&
+			     !pool->prohibit_list->next &&
+			     (pool->prohibit_list->type ==
 			      permit_dynamic_bootp_clients)) ||
-			    (dynamic && !pool -> prohibit_list &&
-			     pool -> permit_list &&
-			     !pool -> permit_list -> next &&
-			     (pool -> permit_list -> type ==
-			      permit_all_clients))) {
+			    (dynamic && !pool->prohibit_list &&
+			     pool->permit_list &&
+			     !pool->permit_list->next &&
+			     (pool->permit_list->type ==
+			      permit_all_clients))) 
+			{
   				break;
 			}
+			
 			last = pool;
 		}
 
 		/* If we didn't get a pool, make one. */
-		if (!pool) {
+		if (!pool) 
+		{
 			struct permit *p;
-			status = pool_allocate (&pool, MDL);
+			status = pool_allocate(&pool, MDL);
 			if (status != ISC_R_SUCCESS)
-				log_fatal ("no memory for ad-hoc pool: %s",
-					   isc_result_totext (status));
-			p = new_permit (MDL);
+				log_fatal ("no memory for ad-hoc pool: %s", isc_result_totext(status));
+			
+			p = new_permit(MDL);
 			if (!p)
-				log_fatal ("no memory for ad-hoc permit.");
+				log_fatal("no memory for ad-hoc permit.");
 
 			/* Dynamic pools permit all clients.   Otherwise
 			   we prohibit BOOTP clients. */
-			if (dynamic) {
-				p -> type = permit_all_clients;
-				pool -> permit_list = p;
-			} else {
-				p -> type = permit_dynamic_bootp_clients;
-				pool -> prohibit_list = p;
+			if (dynamic) 
+			{
+				p->type = permit_all_clients;
+				pool->permit_list = p;
+			} 
+			else 
+			{
+				p->type = permit_dynamic_bootp_clients;
+				pool->prohibit_list = p;
 			}
 
-			if (share -> pools)
-				pool_reference (&last -> next, pool, MDL);
+			if (share->pools)
+				pool_reference(&last->next, pool, MDL);
 			else
-				pool_reference (&share -> pools, pool, MDL);
-			shared_network_reference (&pool -> shared_network,
-						  share, MDL);
-			if (!clone_group (&pool -> group, share -> group, MDL))
+				pool_reference(&share->pools, pool, MDL);
+			
+			shared_network_reference(&pool->shared_network, share, MDL);
+			
+			if (!clone_group(&pool->group, share->group, MDL))
 				log_fatal ("no memory for anon pool group.");
-		} else {
+		}
+		else 
+		{
 			pool = (struct pool *)0;
 			if (last)
-				pool_reference (&pool, last, MDL);
+				pool_reference(&pool, last, MDL);
 			else
-				pool_reference (&pool, share -> pools, MDL);
+				pool_reference(&pool, share->pools, MDL);
 		}
-	} else {
+	} 
+	else 
+	{
 		pool = (struct pool *)0;
-		pool_reference (&pool, inpool, MDL);
+		pool_reference(&pool, inpool, MDL);
 	}
 
 #if defined (FAILOVER_PROTOCOL)
@@ -4039,7 +4051,7 @@ void parse_address_range
 #endif /* FAILOVER_PROTOCOL */
 
 	/* Create the new address range... */
-	new_address_range (cfile, low, high, subnet, pool, lpchain);
+	new_address_range(cfile, low, high, subnet, pool, lpchain);
 	pool_dereference (&pool, MDL);
 }
 

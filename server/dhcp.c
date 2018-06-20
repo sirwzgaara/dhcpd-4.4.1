@@ -5250,9 +5250,11 @@ int allocate_lease
 		 * XXX result in its being allocated. */
 		/* Skip to the most expired lease in the pool that is not
 		 * owned by a failover peer. */
-		if (pool->failover_peer != NULL) {
+		if (pool->failover_peer != NULL) 
+		{
 			struct lease *peerl = NULL;
-			if (pool->failover_peer->i_am == primary) {
+			if (pool->failover_peer->i_am == primary) 
+			{
 				candl = LEASE_GET_FIRST(pool->free);
 
 				/*
@@ -5262,25 +5264,35 @@ int allocate_lease
 				 * the peer's leases after STOS+MCLT.
 				 */
 				peerl = LEASE_GET_FIRST(pool->backup);
-				if (peerl != NULL) {
+				if (peerl != NULL) 
+				{
 					if (((candl == NULL) ||
 					     (candl->ends > peerl->ends)) &&
-					    lease_mine_to_reallocate(peerl)) {
+					    lease_mine_to_reallocate(peerl)) 
+					{
 						candl = peerl;
-					} else {
+					} 
+					else 
+					{
 						*peer_has_leases = 1;
 					}
 				}
-			} else {
+			}
+			else 
+			{
 				candl = LEASE_GET_FIRST(pool->backup);
 
 				peerl = LEASE_GET_FIRST(pool->free);
-				if (peerl != NULL) {
+				if (peerl != NULL) 
+				{
 					if (((candl == NULL) ||
 					     (candl->ends > peerl->ends)) &&
-					    lease_mine_to_reallocate(peerl)) {
+					    lease_mine_to_reallocate(peerl)) 
+					{
 						candl = peerl;
-					} else {
+					}
+					else 
+					{
 						*peer_has_leases = 1;
 					}
 				}
@@ -5288,7 +5300,7 @@ int allocate_lease
 
 			/* Try abandoned leases as a last resort. */
 			peerl = LEASE_GET_FIRST(pool->abandoned);
-			if ((candl == NULL) && (peerl != NULL) &&
+			if ((candl == NULL || candl->ends > cur_time) && (peerl != NULL) &&
 			    lease_mine_to_reallocate(peerl))
 				candl = peerl;
 		} else
@@ -5297,9 +5309,12 @@ int allocate_lease
 			/* 先考虑free链表，然后考虑abandoned */
 			if (LEASE_NOT_EMPTY(pool->free))
 				candl = LEASE_GET_FIRST(pool->free);
-			else
+			
+			if (NULL == candl || candl->ends > cur_time)
 				candl = LEASE_GET_FIRST(pool->abandoned);
 		}
+		if (!candl)
+			continue;
 
 		/*
 		 * XXX: This may not match with documented expectation.
@@ -5310,15 +5325,7 @@ int allocate_lease
 		 * "no free leases" error when the last lease has been
 		 * offered, but it's not exactly broken either.
 		 */
-
-		/* 若candl是空或者不是abandoned但是租约还没到期，继续下一个pool */
-		if (!candl ||
-	            (candl->binding_state != FTS_ABANDONED &&
-		     (candl->ends > cur_time))) 
-		{
-			continue;
-		}
-
+		 
 		/* 将candl挂接给lease，因为continue了，所以后面会有两个，取最优的 */
 		if (!lease) 
 		{
