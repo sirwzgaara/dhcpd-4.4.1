@@ -2733,7 +2733,7 @@ void parse_shared_net_declaration (cfile, group)
 Func Name :   common_subnet_parsing
 Date Created: 2018/06/14
 Author:  	  wangzhe
-Description:  
+Description:  保存subnet并进一步解析其内部的内容
 Input:	      IN struct parse * cfile
   			  IN struct shared_networked * share
   			  IN struct subnet * subnet

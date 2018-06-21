@@ -237,6 +237,8 @@ int group_dereference (ptr, file, line)
 	*ptr = (struct group *)0;
 	--group -> refcnt;
 	rc_register (file, line, ptr, group, group -> refcnt, 1, RC_MISC);
+
+	/* 若还有引用计数，不能释放内存，直接返回 */
 	if (group -> refcnt > 0)
 		return 1;
 

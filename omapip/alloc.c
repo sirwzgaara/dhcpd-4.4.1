@@ -634,7 +634,6 @@ isc_result_t omapi_object_dereference
 	int extra_references;
 	omapi_object_t *p, *hp;
 
-	/* 对h进行一系列检查 */
 	if (!h)
 		return DHCP_R_INVALIDARG;
 
