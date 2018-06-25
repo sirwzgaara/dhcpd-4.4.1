@@ -2829,7 +2829,7 @@ static int common_subnet_parsing
 }
 
 /*********************************************************************
-Func Name :   do_packet
+Func Name :   parse_subnet_declaration
 Date Created: 2018/06/14
 Author:  	  wangzhe
 Description:  ½âÎösubnet×Ö¶Î

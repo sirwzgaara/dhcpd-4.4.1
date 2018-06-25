@@ -2530,7 +2530,13 @@ Func Name :   save_option_buffer
 Date Created: 2018/05/30
 Author:  	  wangzhe
 Description:  Save a specified buffer into an option cache.	
-Input:	      
+Input:	      struct universe *universe
+		      struct option_state *options
+			  struct buffer *bp 	   dhcp报文中第一个option的起始偏移
+ 			  unsigned char *buffer    本次要添加的option的偏移
+ 			  unsigned length		   这个option的长度
+ 			  unsigned code 
+ 			  int terminatep
 Output:       
 Return:       int
 Caution : 	  
@@ -2592,7 +2598,7 @@ append_option_buffer(struct universe *universe, struct option_state *options,
 Func Name :   prepare_option_buffer
 Date Created: 2018/06/06
 Author:  	  wangzhe
-Description:  讲一个struct option读取到option_cache中
+Description:  将一个struct option读取到option_cache中
 Input:	      
 Output:       
 Return:       int
@@ -2633,7 +2639,7 @@ static int prepare_option_buffer
 		log_fatal("Inconsistent universe tag size at %s:%d.", MDL);
 	}
 
-	/* hash_lookup，在dhcp_universe的code_hash表中查找 */
+	/* hash_lookup，在dhcp_universe的code_hash表中查找，一般能找到 */
 	option_code_hash_lookup(&option, universe->code_hash, &code, 0, MDL);
 
 	/* If we created an option structure for each option a client
