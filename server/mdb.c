@@ -3756,7 +3756,7 @@ void expire_all_pools()
 
 	/* First, go over the hash list and actually put all the leases
 	   on the appropriate lists. */
-	   /* hash_foreach，遍历hash表 */
+	   /* hash_foreach，顺序遍历hash表中的每个元素，并对其调用函数 */
 	lease_ip_hash_foreach(lease_ip_addr_hash, lease_instantiate);
 
 	/* Loop through each pool in each shared network and call the

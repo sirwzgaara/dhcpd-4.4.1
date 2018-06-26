@@ -1774,10 +1774,12 @@ int permit_list_match (struct permit *lhs, struct permit *rhs)
  *        or it generates an error message and possible halts the program if
  *        it encounters a problem.
  */
-void parse_pool_statement (cfile, group, type)
-	struct parse *cfile;
-	struct group *group;
-	int type;
+void parse_pool_statement
+(
+	struct parse *cfile,
+	struct group *group,
+	int type
+)
 {
 	enum dhcp_token token;
 	const char *val;
@@ -1795,8 +1797,7 @@ void parse_pool_statement (cfile, group, type)
 
 	if (type == SUBNET_DECL)
 		shared_network_reference(&pool->shared_network,
-					 group->subnet->shared_network,
-					 MDL);
+					 group->subnet->shared_network, MDL);
 	else if (type == SHARED_NET_DECL)
 		shared_network_reference(&pool->shared_network,
 					 group->shared_network, MDL);
@@ -1873,7 +1874,7 @@ void parse_pool_statement (cfile, group, type)
 			parse_semi(cfile);
 			break;
 #endif
-
+subnet
 		      case RANGE:
 			skip_token(&val, NULL, cfile);
 			parse_address_range (cfile, group, type,
@@ -1912,7 +1913,7 @@ void parse_pool_statement (cfile, group, type)
 			break;
 		}
 	} while (!done);
-
+	
 	/* See if there's already a pool into which we can merge this one. */
 	for (pp = pool->shared_network->pools; pp; pp = pp->next) {
 		if (pp->group->statements != pool->group->statements)
