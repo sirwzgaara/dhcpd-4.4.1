@@ -4385,6 +4385,7 @@ int find_lease
 		{
 			if (!fixed_lease) /* Save the host if we found one. */
 			{
+				/* 有主机但是没有fixed_lease，给host赋值 */
 				host_reference(&host, hp, MDL);
 			}
 			host_dereference(&hp, MDL);
@@ -4397,13 +4398,13 @@ int find_lease
 	   it with the hardware address... */
 	if (!fixed_lease && !host) 
 	{
-		/* 这个if一般走不进去 */
 		if (find_hosts_by_haddr(&hp, packet->raw->htype,
 					 packet->raw->chaddr,
 					 packet->raw->hlen, MDL)) 
 		{
 			/* Remember if we know of this client. */
 			packet->known = 1;
+			/* 源码bug，在这里判host没意义 */
 			if (host)
 			{
 				host_dereference(&host, MDL);
@@ -4473,7 +4474,6 @@ int find_lease
 	 * Note that the n_uid lease chain is sorted in order of
 	 * preference, so the first one is the best one.
 	 */
-	/* 这个while一般走不进去 */
 	while (uid_lease) 
 	{
 		isc_boolean_t do_release = !packet->raw->ciaddr.s_addr;

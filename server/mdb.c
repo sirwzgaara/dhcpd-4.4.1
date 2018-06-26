@@ -1027,7 +1027,7 @@ void new_address_range
 	unsigned min;		//最小网络的主机号 
 	unsigned max; 		//最大网络的主机号
 	unsigned i, num_addrs;		
-	char lowbuf[16], highbuf [16], netbuf [16];		//转化为字符串的IP地址，只用来打印
+	char lowbuf[16], highbuf[16], netbuf[16];		//转化为字符串的IP地址，只用来打印
 	struct shared_network *share = subnet->shared_network;
 	struct lease *lt = (struct lease *)0;
 #if !defined(COMPACT_LEASES)
@@ -1085,7 +1085,7 @@ void new_address_range
 	min = host_addr(low, subnet->netmask);
 
 	/* Allow range to be specified high-to-low as well as low-to-high. */
-	/* 这段代码很愚蠢 */
+	/* 这段代码很愚蠢，只是交换min和max而已 */
 	if (min > max) 
 	{
 		max = min;
@@ -1129,6 +1129,7 @@ void new_address_range
 #endif
 
 	/* Fill out the lease structures with some minimal information. */
+	/* 给每个lease初始化 */
 	for (i = 0; i < num_addrs; i++) 
 	{
 		struct lease *lp = (struct lease *)0;

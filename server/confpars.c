@@ -3932,6 +3932,7 @@ void parse_address_range
 	} 
 	else 
 	{
+		/* 做一个检查，low地址应该在subnet中，找到这个subnet并取出来 */
 		share = group->shared_network;
 		for (subnet = share->subnets; subnet; subnet = subnet->next_sibling) 
 		{
