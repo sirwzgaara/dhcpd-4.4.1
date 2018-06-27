@@ -2482,7 +2482,7 @@ void dissociate_lease (lease)
 Func Name :   pool_timer
 Date Created: 2018/06/04
 Author:  	  wangzhe
-Description:  当特定池中的租约到期，调用定时器，处理链表中所有到期的租约
+Description:  当特定池中的租约到期，调用此函数，处理所有过期的租约，也可以手动调用
 Input:	      void * vpool
 Output:       
 Return:       void
@@ -2569,6 +2569,7 @@ void pool_timer
 			}
 
 			/* If we've run out of things to expire on this list, stop. */
+			/* 链表是从小到大排序的，第一个比cur_time大的说明所有过期的都被处理完了 */
 			if (lease->sort_time > cur_time) 
 			{
 				if (lease->sort_time < next_expiry)
@@ -3511,7 +3512,7 @@ void lease_insert
 Func Name :   lease_enqueue
 Date Created: 2018/06/04
 Author:  	  wangzhe
-Description:  根据comp的状态，将comp加入适合的队列中
+Description:  根据lease的状态，将lease加入到pool下对应的队列中，并设置sort_time作为key
 Input:	      IN struct lease * comp
 Output:       
 Return:       
@@ -3707,7 +3708,7 @@ isc_result_t lease_instantiate
 Func Name :   expire_all_pools
 Date Created: 2018/06/04
 Author:  	  wangzhe
-Description:  
+Description:  在所有pool上运行到期事件，只在初始化时调用
 Input:	      void
 Output:       
 Return:       void

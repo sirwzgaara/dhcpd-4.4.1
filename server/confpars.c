@@ -1874,7 +1874,7 @@ void parse_pool_statement
 			parse_semi(cfile);
 			break;
 #endif
-subnet
+
 		      case RANGE:
 			skip_token(&val, NULL, cfile);
 			parse_address_range (cfile, group, type,
@@ -1915,6 +1915,7 @@ subnet
 	} while (!done);
 	
 	/* See if there's already a pool into which we can merge this one. */
+	/* 比如若只有网络配置，那么两个pool就是可以合并的，若白名单或黑名单不一样，就不能合并 */
 	for (pp = pool->shared_network->pools; pp; pp = pp->next) {
 		if (pp->group->statements != pool->group->statements)
 			continue;
@@ -1951,6 +1952,7 @@ subnet
 
 	/* If we didn't succeed in merging this pool into another, put
 	   it on the list. */
+	/* 和subnet与shared_network不同，pool不是加到链表头，而是加到链表尾 */
 	if (!pp) {
 		p = &pool->shared_network->pools;
 		for (; *p; p = &((*p)->next))
@@ -2646,9 +2648,11 @@ int parse_class_declaration (cp, cfile, group, type)
 /* shared-network-declaration :==
 			hostname LBRACE declarations parameters RBRACE */
 
-void parse_shared_net_declaration (cfile, group)
-	struct parse *cfile;
-	struct group *group;
+void parse_shared_net_declaration
+(
+	struct parse *cfile,
+	struct group *group
+)
 {
 	const char *val;
 	enum dhcp_token token;
@@ -2658,15 +2662,14 @@ void parse_shared_net_declaration (cfile, group)
 	isc_result_t status;
 
 	share = (struct shared_network *)0;
-	status = shared_network_allocate (&share, MDL);
+	status = shared_network_allocate(&share, MDL);
 	if (status != ISC_R_SUCCESS)
 		log_fatal ("Can't allocate shared subnet: %s",
 			   isc_result_totext (status));
-	if (clone_group (&share -> group, group, MDL) == 0) {
+	if (clone_group (&share->group, group, MDL) == 0) {
 		log_fatal ("Can't clone group for shared net");
 	}
-	shared_network_reference (&share -> group -> shared_network,
-				  share, MDL);
+	shared_network_reference(&share->group->shared_network, share, MDL);
 
 	/* Get the name of the shared network... */
 	token = peek_token (&val, (unsigned *)0, cfile);
@@ -2691,7 +2694,8 @@ void parse_shared_net_declaration (cfile, group)
 			return;
 		}
 	}
-	share -> name = name;
+	/* 若不是用户配置的shared_network，这个name是网络的字符串格式，比如10.1.108.0/24 */
+	share->name = name;
 
 	if (!parse_lbrace (cfile)) {
 		shared_network_dereference (&share, MDL);
