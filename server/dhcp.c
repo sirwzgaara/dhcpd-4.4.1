@@ -3562,6 +3562,7 @@ void ack_lease
 			data_string_forget(&d1, MDL);
 		}
 
+		/* 获取50%时间 */
 		if ((oc = lookup_option(&dhcp_universe, state->options,
 					DHO_DHCP_RENEWAL_TIME)) != NULL &&
 		    evaluate_option_cache(&d1, packet, lease, NULL,
@@ -3580,7 +3581,7 @@ void ack_lease
 		if (state->ip->address_count) 
 		{
 			state->from.len = sizeof(state->ip->addresses[0]);
-			memcpy (state->from.iabuf, &state->ip->addresses [0], state->from.len);
+			memcpy(state->from.iabuf, &state->ip->addresses[0], state->from.len);
 		}
 	}
 

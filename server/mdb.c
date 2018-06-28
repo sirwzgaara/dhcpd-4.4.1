@@ -2846,6 +2846,7 @@ void uid_hash_add
 		lease_reference(&cand, head, MDL);
 		while (cand != NULL) 
 		{
+			/* 若lease的优先级更高 */
 			if (client_lease_preferred(cand, lease))
 				break;
 
@@ -2869,6 +2870,8 @@ void uid_hash_add
 		 */
 		if (prev == NULL) 
 		{
+			/* 要确保hash中找到的uid_lease是链表头，所以若lease是头，那么要把原来的head删掉，
+			换成lease插入hash表 */
 			lease_reference(&lease->n_uid, head, MDL);
 			lease_id_hash_delete(lease_uid_hash, lease->uid,
 					     lease->uid_len, MDL);
@@ -2877,10 +2880,10 @@ void uid_hash_add
 		} 
 		else /* (prev != NULL) */ 
 		{
+			/* 把lease插入pre后面 */
 			if (prev->n_uid != NULL) 
 			{
-				lease_reference(&lease->n_uid, prev->n_uid,
-						MDL);
+				lease_reference(&lease->n_uid, prev->n_uid, MDL);
 				lease_dereference(&prev->n_uid, MDL);
 			}
 			lease_reference(&prev->n_uid, lease, MDL);
