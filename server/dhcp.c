@@ -4753,7 +4753,7 @@ int find_lease
 		 * into the free or backup states by expiration processes, so
 		 * checking for them here is superfluous.
 		 */
-		/* 只有free状态和backup状态的lease可以被分配 */
+		/* 对于新的clinet，只有free状态和backup状态的lease可以被分配 */
 		if (ip_lease->binding_state != FTS_FREE && ip_lease->binding_state != FTS_BACKUP) 
 		{
 #if defined (DEBUG_FIND_LEASE)
