@@ -389,9 +389,15 @@ int make_limit (new, expr, limit)
 	return 1;
 }
 
-int option_cache (struct option_cache **oc, struct data_string *dp,
-		  struct expression *expr, struct option *option,
-		  const char *file, int line)
+int option_cache 
+(
+	struct option_cache **oc, 
+	struct data_string *dp,
+	struct expression *expr, 
+	struct option *option,
+	const char *file, 
+	int line
+)
 {
 	if (!option_cache_allocate (oc, file, line))
 		return 0;

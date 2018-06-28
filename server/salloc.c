@@ -185,9 +185,11 @@ isc_result_t host_dereference (struct host_decl **ptr,
 
 struct lease_state *free_lease_states;
 
-struct lease_state *new_lease_state (file, line)
-	const char *file;
-	int line;
+struct lease_state *new_lease_state
+(
+	const char *file,
+	int line
+)
 {
 	struct lease_state *rval;
 

@@ -296,6 +296,18 @@ void change_host_uid
 	host_hash_add(host_uid_hash, host->client_identifier.data,  host->client_identifier.len, host, MDL);
 }
 
+/*********************************************************************
+Func Name :   enter_host
+Date Created: 2018/06/28
+Author:  	  wangzhe
+Description:  保存host结构，解析conf文件遇到固定IP地址的时候进入这个函数保存信息
+Input:	      IN struct host_decl * hd	主机结构
+			  IN int dynamicp			是否是固定地址
+			  IN int commit				是否写入到文件
+Output:       
+Return:       
+Caution : 	  
+*********************************************************************/
 isc_result_t enter_host 
 (
 	struct host_decl * hd, 
@@ -477,7 +489,7 @@ isc_result_t enter_host
 			
 			option_reference(&h_id_info->option, hd->host_id_option, MDL);
 			
-			if (!host_new_hash(&h_id_info->values_hash,  HOST_HASH_SIZE, MDL)) 
+			if (!host_new_hash(&h_id_info->values_hash, HOST_HASH_SIZE, MDL)) 
 			{
 				log_fatal("No memory for host-identifier option hash.");
 			}
@@ -952,11 +964,11 @@ int find_host_for_network
 	/* 遍历host链表 */
 	for (hp = *host; hp; hp = hp->n_ipaddr) 
 	{
-		/* 若没有地址，继续下一个host */
+		/* 若没有固定IP地址，继续下一个host */
 		if (!hp->fixed_addr)
 			continue;
 
-		/* 若没有地址，继续下一个host */
+		/* 若从fixed_addr中获取地址失败，继续下一个 */
 		if (!evaluate_option_cache(&fixed_addr, (struct packet *)0,
 					    (struct lease *)0,
 					    (struct client_state *)0,
@@ -2047,8 +2059,7 @@ void make_binding_state_transition
 		lease->tstp = lease->ends;
 	}
 
-	/* If the lease was active and is now released, do the release
-	   event. */
+	/* If the lease was active and is now released, do the release event. */
 	if (lease->next_binding_state != lease->binding_state &&
 	    ((
 #if defined (FAILOVER_PROTOCOL)
@@ -2582,6 +2593,7 @@ void pool_timer
 			   state change should happen, just call
 			   supersede_lease on it to make the change
 			   happen. */
+			/* 如某个lease到期了，且下个状态和本次状态不一样，要从链表中移动 */
 			if (lease->next_binding_state != lease->binding_state)
 			{
 #if defined(FAILOVER_PROTOCOL)

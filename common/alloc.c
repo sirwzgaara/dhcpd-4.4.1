@@ -440,10 +440,12 @@ void relinquish_free_pairs ()
 
 struct expression *free_expressions;
 
-int expression_allocate (cptr, file, line)
-	struct expression **cptr;
-	const char *file;
+int expression_allocate
+(
+	struct expression **cptr,
+	const char *file,
 	int line;
+)
 {
 	struct expression *rval;
 
@@ -708,23 +710,26 @@ int option_cache_reference (ptr, src, file, line)
 	return 1;
 }
 
-int buffer_allocate (ptr, len, file, line)
-	struct buffer **ptr;
-	unsigned len;
-	const char *file;
-	int line;
+int buffer_allocate
+(
+	struct buffer **ptr,
+	unsigned len,
+	const char *file,
+	int line
+)
 {
 	struct buffer *bp;
 
 	/* XXXSK: should check for bad ptr values, otherwise we
 		  leak memory if they are wrong */
-	bp = dmalloc (len + sizeof *bp, file, line);
+	bp = dmalloc (len + sizeof(*bp), file, line);
 	if (!bp)
 		return 0;
 	/* XXXSK: both of these initializations are unnecessary */
-	memset (bp, 0, sizeof *bp);
-	bp -> refcnt = 0;
-	return buffer_reference (ptr, bp, file, line);
+	memset (bp, 0, sizeof(*bp));
+	bp->refcnt = 0;
+	
+	return buffer_reference(ptr, bp, file, line);
 }
 
 int buffer_reference (ptr, bp, file, line)

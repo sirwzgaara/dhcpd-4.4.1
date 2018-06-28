@@ -538,8 +538,7 @@ void dhcprequest
 		memcpy(cip.iabuf, &packet->raw->ciaddr.s_addr, 4);
 	}
 
-	/* Find the lease that matches the address requested by the
-	   client. */
+	/* Find the lease that matches the address requested by the client. */
 
 	subnet = (struct subnet *)0;
 	lease = (struct lease *)0;
@@ -834,22 +833,36 @@ void dhcprequest
 	return;
 }
 
-void dhcprelease (packet, ms_nulltp)
-	struct packet *packet;
-	int ms_nulltp;
+/*********************************************************************
+Func Name 	 : dhcprelease
+Date Created : 2018/06/28
+Author		 : wangzhe
+Description	 : client发来release报文主动释放租约
+Input		 : IN struct packet * packet
+			   IN int ms_nulltp
+Output		 : 
+Return		 : void
+Caution 	 : 
+*********************************************************************/
+void dhcprelease
+(
+	struct packet *packet,
+	int ms_nulltp
+)
 {
 	struct lease *lease = (struct lease *)0, *next = (struct lease *)0;
 	struct iaddr cip;
 	struct option_cache *oc;
 	struct data_string data;
 	const char *s;
-	char msgbuf [1024], cstr[16]; /* XXX */
+	char msgbuf[1024], cstr[16]; /* XXX */
 
 
 	/* DHCPRELEASE must not specify address in requested-address
 	   option, but old protocol specs weren't explicit about this,
 	   so let it go. */
-	if ((oc = lookup_option (&dhcp_universe, packet -> options,
+	/* release报文不应该设置这个字段，为了兼容老版本 */
+	if ((oc = lookup_option (&dhcp_universe, packet->options,
 				 DHO_DHCP_REQUESTED_ADDRESS))) {
 		log_info ("DHCPRELEASE from %s specified requested-address.",
 		      print_hw_addr (packet -> raw -> htype,
@@ -857,9 +870,8 @@ void dhcprelease (packet, ms_nulltp)
 				     packet -> raw -> chaddr));
 	}
 
-	oc = lookup_option (&dhcp_universe, packet -> options,
-			    DHO_DHCP_CLIENT_IDENTIFIER);
-	memset (&data, 0, sizeof data);
+	oc = lookup_option(&dhcp_universe, packet->options, DHO_DHCP_CLIENT_IDENTIFIER);
+	memset(&data, 0, sizeof(data));
 	if (oc &&
 	    evaluate_option_cache (&data, packet, (struct lease *)0,
 				   (struct client_state *)0,
@@ -868,56 +880,62 @@ void dhcprelease (packet, ms_nulltp)
 		find_lease_by_uid (&lease, data.data, data.len, MDL);
 		data_string_forget (&data, MDL);
 
-		/* See if we can find a lease that matches the IP address
-		   the client is claiming. */
-		while (lease) {
-			if (lease -> n_uid)
-				lease_reference (&next, lease -> n_uid, MDL);
-			if (!memcmp (&packet -> raw -> ciaddr,
-				     lease -> ip_addr.iabuf, 4)) {
+		/* See if we can find a lease that matches the IP address the client is claiming. */
+		/* 找到要release的lease */
+		while (lease) 
+		{
+			if (lease->n_uid)
+				lease_reference(&next, lease->n_uid, MDL);
+			if (!memcmp(&packet->raw->ciaddr, lease->ip_addr.iabuf, 4)) 
+			{
 				break;
 			}
-			lease_dereference (&lease, MDL);
-			if (next) {
-				lease_reference (&lease, next, MDL);
-				lease_dereference (&next, MDL);
+			lease_dereference(&lease, MDL);
+			if (next) 
+			{
+				lease_reference(&lease, next, MDL);
+				lease_dereference(&next, MDL);
 			}
 		}
 		if (next)
-			lease_dereference (&next, MDL);
+			lease_dereference(&next, MDL);
 	}
 
 	/* The client is supposed to pass a valid client-identifier,
 	   but the spec on this has changed historically, so try the
 	   IP address in ciaddr if the client-identifier fails. */
-	if (!lease) {
+	if (!lease) 
+	{
 		cip.len = 4;
-		memcpy (cip.iabuf, &packet -> raw -> ciaddr, 4);
-		find_lease_by_ip_addr (&lease, cip, MDL);
+		memcpy(cip.iabuf, &packet->raw->ciaddr, 4);
+		find_lease_by_ip_addr(&lease, cip, MDL);
 	}
 
 
 	/* If the hardware address doesn't match, don't do the release. */
 	if (lease &&
-	    (lease -> hardware_addr.hlen != packet -> raw -> hlen + 1 ||
-	     lease -> hardware_addr.hbuf [0] != packet -> raw -> htype ||
-	     memcmp (&lease -> hardware_addr.hbuf [1],
-		     packet -> raw -> chaddr, packet -> raw -> hlen)))
+	    (lease->hardware_addr.hlen != packet->raw->hlen + 1 ||
+	     lease->hardware_addr.hbuf[0] != packet->raw->htype ||
+	     memcmp(&lease->hardware_addr.hbuf[1],
+		     packet->raw->chaddr, packet->raw->hlen)))
 		lease_dereference (&lease, MDL);
 
-	if (lease && lease -> client_hostname) {
-		if ((strlen (lease -> client_hostname) <= 64) &&
+	if (lease && lease->client_hostname) 
+	{
+		if ((strlen(lease->client_hostname) <= 64) &&
 		    db_printable((unsigned char *)lease->client_hostname))
-			s = lease -> client_hostname;
+			s = lease->client_hostname;
 		else
 			s = "Hostname Unsuitable for Printing";
-	} else
+	} 
+	else
 		s = (char *)0;
 
 	/* %Audit% Cannot exceed 16 bytes. %2004.06.17,Safe%
 	 * We copy this out to stack because we actually want to log two
 	 * inet_ntoa()'s in this message.
 	 */
+	/* 这个东西只用来打印 */
 	strncpy(cstr, inet_ntoa (packet -> raw -> ciaddr), 15);
 	cstr[15] = '\0';
 
@@ -978,8 +996,10 @@ void dhcprelease (packet, ms_nulltp)
 #endif
 
 	/* If we found a lease, release it. */
-	if (lease && lease -> ends > cur_time) {
-		release_lease (lease, packet);
+	/* lease没过期，才有release的意义 */
+	if (lease && lease->ends > cur_time) 
+	{
+		release_lease(lease, packet);
 	} 
 	log_info ("%s", msgbuf);
 #if defined(FAILOVER_PROTOCOL)
@@ -989,9 +1009,22 @@ void dhcprelease (packet, ms_nulltp)
 		lease_dereference (&lease, MDL);
 }
 
-void dhcpdecline (packet, ms_nulltp)
-	struct packet *packet;
-	int ms_nulltp;
+/*********************************************************************
+Func Name 	 : dhcpdecline
+Date Created : 2018/06/28
+Author		 : wangzhe
+Description	 : client发来报文告诉server一个IP地址不可用
+Input		 : IN struct packet * packet
+			   IN int ms_nulltp
+Output		 : 
+Return		 : void
+Caution 	 : 
+*********************************************************************/
+void dhcpdecline
+(
+	struct packet *packet,
+	int ms_nulltp
+)
 {
 	struct lease *lease = (struct lease *)0;
 	struct option_state *options = (struct option_state *)0;
@@ -999,16 +1032,15 @@ void dhcpdecline (packet, ms_nulltp)
 	int i;
 	const char *status;
 	const char *s;
-	char msgbuf [1024]; /* XXX */
+	char msgbuf[1024]; /* XXX */
 	struct iaddr cip;
 	struct option_cache *oc;
 	struct data_string data;
 
 	/* DHCPDECLINE must specify address. */
-	if (!(oc = lookup_option (&dhcp_universe, packet -> options,
-				  DHO_DHCP_REQUESTED_ADDRESS)))
+	if (!(oc = lookup_option(&dhcp_universe, packet->options, DHO_DHCP_REQUESTED_ADDRESS)))
 		return;
-	memset (&data, 0, sizeof data);
+	memset(&data, 0, sizeof(data));
 	if (!evaluate_option_cache (&data, packet, (struct lease *)0,
 				    (struct client_state *)0,
 				    packet -> options,
@@ -1021,10 +1053,11 @@ void dhcpdecline (packet, ms_nulltp)
 	data_string_forget (&data, MDL);
 	find_lease_by_ip_addr (&lease, cip, MDL);
 
-	if (lease && lease -> client_hostname) {
-		if ((strlen (lease -> client_hostname) <= 64) &&
+	if (lease && lease->client_hostname) 
+	{
+		if ((strlen(lease->client_hostname) <= 64) &&
 		    db_printable((unsigned char *)lease->client_hostname))
-			s = lease -> client_hostname;
+			s = lease->client_hostname;
 		else
 			s = "Hostname Unsuitable for Printing";
 	} else
@@ -1064,7 +1097,7 @@ void dhcpdecline (packet, ms_nulltp)
 		 ? inet_ntoa (packet -> raw -> giaddr)
 		 : packet -> interface -> name);
 
-	option_state_allocate (&options, MDL);
+	option_state_allocate(&options, MDL);
 
 	/* Execute statements in scope starting with the subnet scope. */
 	if (lease)
@@ -2320,6 +2353,7 @@ void ack_lease
 	   REQUEST our offer, it will expire in 2 minutes, overriding the
 	   expire time in the currently in force lease.  We want the expire
 	   events to be executed at that point. */
+	/* 若leaes已经过期了，消除事件，否则需要保留事件 */
 	if (lease->ends <= cur_time && offer != DHCPOFFER) 
 	{
 		/* Get rid of any old expiry or release statements - by
@@ -2768,6 +2802,7 @@ void ack_lease
 	lt->ip_addr = lease->ip_addr;
 
 	/* Start now. */
+	/* lease的初始时间设置为当前时间 */
 	lt->starts = cur_time;
 
 	/* Figure out how long a lease to assign.    If this is a
@@ -3088,6 +3123,7 @@ void ack_lease
 						 MAX_TIME - 1);
 		}
 
+		/* when是cur_time加2分钟 */
 		if (when)
 			lt->ends = when;
 		else
@@ -3138,6 +3174,7 @@ void ack_lease
 	}
 
 	/* Update Client Last Transaction Time. */
+	/* cltt是lease上次修改时间 */
 	lt->cltt = cur_time;
 
 	/* See if we want to record the uid for this client */
@@ -3148,6 +3185,7 @@ void ack_lease
 					   &lease->scope, oc, MDL)) 
 	{	
 		/* Record the uid, if given... */
+		/* uid是从报文里面拿的 */
 		oc = lookup_option (&dhcp_universe, packet->options, DHO_DHCP_CLIENT_IDENTIFIER);
 		if (oc &&
 		    evaluate_option_cache(&d1, packet, lease, NULL,
@@ -3285,8 +3323,9 @@ void ack_lease
 	}
 
 	/* Record the hardware address, if given... */
+	/* 在lease中记录硬件地址 */
 	lt->hardware_addr.hlen = packet->raw->hlen + 1;
-	lt->hardware_addr.hbuf [0] = packet->raw->htype;
+	lt->hardware_addr.hbuf[0] = packet->raw->htype;
 	memcpy(&lt->hardware_addr.hbuf[1], packet->raw->chaddr, sizeof(packet->raw->chaddr));
 
 	/*
@@ -3329,6 +3368,7 @@ void ack_lease
 #endif /* NSUPDATE */
 
 	/* Don't call supersede_lease on a mocked-up lease. */
+	/* 这种lease是固定的，不是pool的链表中，所以不能用supersede */
 	if (lease->flags & STATIC_LEASE) 
 	{
 		/* Copy the hardware address into the static lease structure. */
@@ -3718,6 +3758,7 @@ void ack_lease
 
 	/* If this is a DHCPOFFER, ping the lease address before actually
 	   sending the offer. */
+	/* 若lease是free状态的，不用ping */
 	if (offer == DHCPOFFER && !(lease->flags & STATIC_LEASE) &&
 	    (((cur_time - lease_cltt) > 60) ||
              (lease->binding_state == FTS_ABANDONED)) &&
@@ -5310,7 +5351,7 @@ int allocate_lease
 			/* 先考虑free链表，然后考虑abandoned */
 			if (LEASE_NOT_EMPTY(pool->free))
 				candl = LEASE_GET_FIRST(pool->free);
-			
+			/* 这里修改了源码的一个bug，若free的lease已经超时了，重新寻找这个pool中的abandon的lease */
 			if (NULL == candl || candl->ends > cur_time)
 				candl = LEASE_GET_FIRST(pool->abandoned);
 		}
@@ -5346,6 +5387,7 @@ int allocate_lease
 		 * between the two.  If the candidate lease is of a higher
 		 * preferred grade over the selected lease, use it.
 		 */
+		/* 越早过期越好，所以选ends小的 */
 		if ((lease->binding_state == FTS_ABANDONED) &&
 		    ((candl->binding_state != FTS_ABANDONED) ||
 		     (candl->ends < lease->ends))) 
@@ -5356,6 +5398,7 @@ int allocate_lease
 		else if (candl->binding_state == FTS_ABANDONED)
 			continue;
 
+		/* 没和uid或者硬件地址绑定的lease更优秀 */
 		if ((lease->uid_len || lease->hardware_addr.hlen) &&
 		    ((!candl->uid_len && !candl->hardware_addr.hlen) ||
 		     (candl->ends < lease->ends))) 
@@ -5381,6 +5424,7 @@ int allocate_lease
 		 * record and try to move on.  For correctness, if there
 		 * are any other stale host vectors, we want to find them.
 		 */
+		/* 决定启用lease后，需要消除这个lease保存的host结构 */
 		if (lease->host != NULL) 
 		{
 			log_debug("soft impossible condition (%s:%d): stale "

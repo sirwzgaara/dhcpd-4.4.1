@@ -265,10 +265,12 @@ char *parse_host_name (cfile)
    making it difficult to quickly disambiguate them from ip addresses.
 */
 
-int parse_ip_addr_or_hostname (expr, cfile, uniform)
-	struct expression **expr;
-	struct parse *cfile;
-	int uniform;
+int parse_ip_addr_or_hostname
+(
+	struct expression **expr,
+	struct parse *cfile,
+	int uniform
+)
 {
 	const char *val;
 	enum dhcp_token token;
@@ -280,7 +282,8 @@ int parse_ip_addr_or_hostname (expr, cfile, uniform)
 
 	token = peek_token (&val, (unsigned *)0, cfile);
 
-	if (token == NUMBER) {
+	if (token == NUMBER) 
+	{
 		/*
 		 * a hostname may be numeric, but domain names must
 		 * start with a letter, so we can disambiguate by
@@ -301,7 +304,8 @@ int parse_ip_addr_or_hostname (expr, cfile, uniform)
 
 	}
 
-	if (is_identifier (token) || token == NUMBER) {
+	if (is_identifier (token) || token == NUMBER) 
+	{
 		name = parse_host_name (cfile);
 		if (!name)
 			return 0;
@@ -316,7 +320,9 @@ int parse_ip_addr_or_hostname (expr, cfile, uniform)
 			expression_dereference (expr, MDL);
 			*expr = x;
 		}
-	} else {
+	} 
+	else 
+	{
 		if (token != RBRACE && token != LBRACE)
 			token = next_token (&val, (unsigned *)0, cfile);
 		parse_warn (cfile, "%s (%d): expecting IP address or hostname",

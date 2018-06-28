@@ -438,9 +438,11 @@ int parse_statement
 		
 	      case HOST:
 		skip_token(&val, (unsigned *)0, cfile);
-		if (type != HOST_DECL && type != CLASS_DECL) {
+		if (type != HOST_DECL && type != CLASS_DECL) 
+		{
 			if (global_host_once &&
-			    (type == SUBNET_DECL || type == SHARED_NET_DECL)) {
+			    (type == SUBNET_DECL || type == SHARED_NET_DECL)) 
+			{
 				global_host_once = 0;
 				log_error("WARNING: Host declarations are "
 					  "global.  They are not limited to "
@@ -629,6 +631,7 @@ int parse_statement
 			break;
 		}
 
+		/* 解析之后，hardware包含硬件长度和地址 */
 		parse_hardware_param (cfile, &hardware);
 		if (host_decl)
 			host_decl -> interface = hardware;
@@ -641,17 +644,24 @@ int parse_statement
 	      case FIXED_ADDR6:
 		skip_token(&val, NULL, cfile);
 		cache = NULL;
-		if (parse_fixed_addr_param(&cache, cfile, token)) {
-			if (host_decl) {
-				if (host_decl->fixed_addr) {
+		if (parse_fixed_addr_param(&cache, cfile, token)) 
+		{
+			if (host_decl)
+			{
+				if (host_decl->fixed_addr) 
+				{
 					option_cache_dereference(&cache, MDL);
 					parse_warn(cfile,
 						   "Only one fixed address "
 						   "declaration per host.");
-				} else {
+				} 
+				else 
+				{
 					host_decl->fixed_addr = cache;
 				}
-			} else {
+			} 
+			else 
+			{
 				parse_warn(cfile,
 					   "fixed-address parameter not "
 					   "allowed here.");
@@ -2004,9 +2014,11 @@ int parse_lbrace (cfile)
 
 /* host-declaration :== hostname RBRACE parameters declarations LBRACE */
 
-void parse_host_declaration (cfile, group)
-	struct parse *cfile;
-	struct group *group;
+void parse_host_declaration 
+(
+	struct parse *cfile,
+	struct group *group
+)
 {
 	const char *val;
 	enum dhcp_token token;
@@ -2020,7 +2032,8 @@ void parse_host_declaration (cfile, group)
 	struct option *option;
 	struct expression *expr = NULL;
 
-	name = parse_host_name (cfile);
+	/* 解析hostname，是一个字符串 */
+	name = parse_host_name(cfile);
 	if (!name) {
 		parse_warn (cfile, "expecting a name for host declaration.");
 		skip_to_semi (cfile);
@@ -2028,12 +2041,13 @@ void parse_host_declaration (cfile, group)
 	}
 
 	host = (struct host_decl *)0;
-	status = host_allocate (&host, MDL);
+	status = host_allocate(&host, MDL);
 	if (status != ISC_R_SUCCESS)
 		log_fatal ("can't allocate host decl struct %s: %s",
 			   name, isc_result_totext (status));
-	host -> name = name;
-	if (!clone_group (&host -> group, group, MDL)) {
+	host->name = name;
+	if (!clone_group(&host->group, group, MDL)) 
+	{
 		log_fatal ("can't clone group for host %s", name);
 	      boom:
 		host_dereference (&host, MDL);
@@ -2225,7 +2239,8 @@ void parse_host_declaration (cfile, group)
                                               host, declaration);
 	} while (1);
 
-	if (deleted) {
+	if (deleted) 
+	{
 		struct host_decl *hp = (struct host_decl *)0;
 		if (host_hash_lookup (&hp, host_name_hash,
 				      (unsigned char *)host -> name,
@@ -2233,35 +2248,38 @@ void parse_host_declaration (cfile, group)
 			delete_host (hp, 0);
 			host_dereference (&hp, MDL);
 		}
-	} else {
-		if (host -> named_group && host -> named_group -> group) {
-			if (host -> group -> statements ||
-			    (host -> group -> authoritative !=
-			     host -> named_group -> group -> authoritative)) {
-				if (host -> group -> next)
-				    group_dereference (&host -> group -> next,
-						       MDL);
-				group_reference (&host -> group -> next,
-						 host -> named_group -> group,
-						 MDL);
-			} else {
-				group_dereference (&host -> group, MDL);
-				group_reference (&host -> group,
-						 host -> named_group -> group,
-						 MDL);
+	} 
+	else 
+	{
+		if (host->named_group && host->named_group->group) 
+		{
+			if (host->group->statements ||
+			    (host->group->authoritative !=
+			     host->named_group->group->authoritative)) 
+			{
+				if (host->group->next)
+				    group_dereference(&host->group->next, MDL);
+				
+				group_reference(&host->group->next, host->named_group->group, MDL);
+			} 
+			else 
+			{
+				group_dereference(&host->group, MDL);
+				group_reference(&host->group, host->named_group->group, MDL);
 			}
 		}
 				
 		if (dynamicp)
-			host -> flags |= HOST_DECL_DYNAMIC;
+			host->flags |= HOST_DECL_DYNAMIC;
 		else
-			host -> flags |= HOST_DECL_STATIC;
+			host->flags |= HOST_DECL_STATIC;
 
-		status = enter_host (host, dynamicp, 0);
+		status = enter_host(host, dynamicp, 0);
 		if (status != ISC_R_SUCCESS)
 			parse_warn (cfile, "host %s: %s", host -> name,
 				    isc_result_totext (status));
 	}
+	
 	host_dereference (&host, MDL);
 }
 
@@ -3157,10 +3175,13 @@ void parse_group_declaration (cfile, group)
    ip-addrs-or-hostnames :== ip-addr-or-hostname
 			   | ip-addrs-or-hostnames ip-addr-or-hostname */
 
-int
-parse_fixed_addr_param(struct option_cache **oc, 
-		       struct parse *cfile, 
-		       enum dhcp_token type) {
+int parse_fixed_addr_param
+(
+	struct option_cache **oc, 
+	struct parse *cfile, 
+	enum dhcp_token type
+) 
+{
 	int parse_ok;
 	const char *val;
 	enum dhcp_token token;
@@ -3170,14 +3191,20 @@ parse_fixed_addr_param(struct option_cache **oc,
 
 	do {
 		tmp = NULL;
-		if (type == FIXED_ADDR) {
+		if (type == FIXED_ADDR) 
+		{
 			parse_ok = parse_ip_addr_or_hostname(&tmp, cfile, 1);
-		} else {
+		}
+		else 
+		{
 			/* INSIST(type == FIXED_ADDR6); */
 			parse_ok = parse_ip6_addr_expr(&tmp, cfile);
 		}
-		if (parse_ok) {
-			if (expr != NULL) {
+		
+		if (parse_ok)
+		{
+			if (expr != NULL) 
+			{
 				new = NULL;
 				status = make_concat(&new, expr, tmp);
 				expression_dereference(&expr, MDL);
@@ -3189,20 +3216,26 @@ parse_fixed_addr_param(struct option_cache **oc,
 			} else {
 				expr = tmp;
 			}
-		} else {
+		} 
+		else 
+		{
 			if (expr != NULL) {
 				expression_dereference (&expr, MDL);
 			}
 			return 0;
 		}
+		
 		token = peek_token(&val, NULL, cfile);
-		if (token == COMMA) {
+		if (token == COMMA) 
+		{
 			token = next_token(&val, NULL, cfile);
 		}
 	} while (token == COMMA);
 
-	if (!parse_semi(cfile)) {
-		if (expr) {
+	if (!parse_semi(cfile)) 
+	{
+		if (expr) 
+		{
 			expression_dereference (&expr, MDL);
 		}
 		return 0;
@@ -3210,6 +3243,7 @@ parse_fixed_addr_param(struct option_cache **oc,
 
 	status = option_cache(oc, NULL, expr, NULL, MDL);
 	expression_dereference(&expr, MDL);
+	
 	return status;
 }
 
