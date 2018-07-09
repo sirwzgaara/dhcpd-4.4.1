@@ -1137,20 +1137,26 @@ isc_result_t omapi_value_dereference (omapi_value_t **h,
 	return ISC_R_SUCCESS;
 }
 
-isc_result_t omapi_addr_list_new (omapi_addr_list_t **d, unsigned count,
-				  const char *file, int line)
+/* ·ÖÅäÒ»¶ÎÄÚ´æ */
+isc_result_t omapi_addr_list_new 
+(
+	omapi_addr_list_t **d, 
+	unsigned count,
+	const char *file, 
+	int line
+)
 {
 	omapi_addr_list_t *new;
 
-	new = dmalloc ((count * sizeof (omapi_addr_t)) +
+	new = dmalloc((count * sizeof (omapi_addr_t)) +
 		       sizeof (omapi_addr_list_t), file, line);
 	if (!new)
 		return ISC_R_NOMEMORY;
-	memset (new, 0, ((count * sizeof (omapi_addr_t)) +
-			 sizeof (omapi_addr_list_t)));
-	new -> count = count;
-	new -> addresses = (omapi_addr_t *)(new + 1);
-	return omapi_addr_list_reference (d, new, file, line);
+	memset(new, 0, ((count * sizeof (omapi_addr_t)) + sizeof(omapi_addr_list_t)));
+	new->count = count;
+	new->addresses = (omapi_addr_t *)(new + 1);
+	
+	return omapi_addr_list_reference(d, new, file, line);
 }
 
 isc_result_t omapi_addr_list_reference (omapi_addr_list_t **r,
