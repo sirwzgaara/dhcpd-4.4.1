@@ -1958,8 +1958,8 @@ isc_result_t dhcp_failover_set_service_state (dhcp_failover_state_t *state)
  * \param state is the state block for the failover connection we are
  * updating.
  */
-
-void dhcp_failover_rescind_updates (dhcp_failover_state_t *state)
+/* ACK队列放入update队列 */
+void dhcp_failover_rescind_updates(dhcp_failover_state_t *state)
 {
     struct lease *lp;
 
@@ -1993,8 +1993,21 @@ void dhcp_failover_rescind_updates (dhcp_failover_state_t *state)
     state->cur_unacked_updates = 0;
 }
 
-isc_result_t dhcp_failover_set_state (dhcp_failover_state_t *state,
-				      enum failover_state new_state)
+/*********************************************************************
+Func Name :   dhcp_failover_set_state
+Date Created: 2018/07/09
+Author:  	  wangzhe
+Description:  设置failover状态
+Input:	      
+Output:       
+Return:       None
+Caution : 	  
+*********************************************************************/
+isc_result_t dhcp_failover_set_state
+(
+	dhcp_failover_state_t *state,
+	enum failover_state new_state
+)
 {
     enum failover_state saved_state;
     TIME saved_stos;
@@ -2007,30 +2020,30 @@ isc_result_t dhcp_failover_set_state (dhcp_failover_state_t *state,
      * state changes, we need to re-schedule any pending updates just to
      * be on the safe side.  This results in retransmission.
      */
-    switch (state -> me.state) {
-      case normal:
-      case potential_conflict:
-      case partner_down:
-	/* Move the ack queue to the update queue */
-	dhcp_failover_rescind_updates(state);
+    switch (state->me.state) 
+	{
+		case normal:
+		case potential_conflict:
+		case partner_down:
+			/* Move the ack queue to the update queue */
+			dhcp_failover_rescind_updates(state);
 
-	/* We will re-queue a timeout later, if applicable. */
-	cancel_timeout (dhcp_failover_keepalive, state);
-	break;
+			/* We will re-queue a timeout later, if applicable. */
+			cancel_timeout (dhcp_failover_keepalive, state);
+			break;
 
-      default:
-	break;
+		default:
+			break;
     }
 
     /* Tentatively make the transition. */
-    saved_state = state -> me.state;
-    saved_stos = state -> me.stos;
+    saved_state = state->me.state;
+    saved_stos = state->me.stos;
 
     /* Keep the old stos if we're going into recover_wait or if we're
        coming into or out of startup. */
-    if (new_state != recover_wait && new_state != startup &&
-	saved_state != startup)
-	    state -> me.stos = cur_time;
+    if (new_state != recover_wait && new_state != startup && saved_state != startup)
+	    state->me.stos = cur_time;
 
     /* If we're in shutdown, peer is in partner_down, and we're moving
        to recover, we can skip waiting for MCLT to expire.    This happens
@@ -2038,26 +2051,27 @@ isc_result_t dhcp_failover_set_state (dhcp_failover_state_t *state,
        actually shutting down.   Of course, if there are any updates
        pending we can't actually do this. */
     if (new_state == recover && saved_state == shut_down &&
-	state -> partner.state == partner_down &&
-	!state -> update_queue_head && !state -> ack_queue_head)
-	    state -> me.stos = cur_time - state -> mclt;
+			state->partner.state == partner_down &&
+	!state->update_queue_head && !state->ack_queue_head)
+	    state->me.stos = cur_time - state->mclt;
 
-    state -> me.state = new_state;
+    state->me.state = new_state;
     if (new_state == startup && saved_state != startup)
-	state -> saved_state = saved_state;
+		state->saved_state = saved_state;
 
     /* If we can't record the new state, we can't make a state transition. */
-    if (!write_failover_state (state) || !commit_leases ()) {
-	    log_error ("Unable to record current failover state for %s",
-		       state -> name);
-	    state -> me.state = saved_state;
-	    state -> me.stos = saved_stos;
+    if (!write_failover_state (state) || !commit_leases ()) 
+	{
+	    log_error("Unable to record current failover state for %s", state->name);
+	    state->me.state = saved_state;
+	    state->me.stos = saved_stos;
+		
 	    return ISC_R_IOERROR;
     }
 
-    log_info ("failover peer %s: I move from %s to %s",
-	      state -> name, dhcp_failover_state_name_print (saved_state),
-	      dhcp_failover_state_name_print (state -> me.state));
+    log_info("failover peer %s: I move from %s to %s",
+	      state->name, dhcp_failover_state_name_print(saved_state),
+	      dhcp_failover_state_name_print(state->me.state));
 
     /* If both servers are now normal log it */
     if ((state->me.state == normal) && (state->partner.state == normal))
@@ -2065,7 +2079,7 @@ isc_result_t dhcp_failover_set_state (dhcp_failover_state_t *state,
 
     /* If we were in startup and we just left it, cancel the timeout. */
     if (new_state != startup && saved_state == startup)
-	cancel_timeout (dhcp_failover_startup_timeout, state);
+		cancel_timeout (dhcp_failover_startup_timeout, state);
 
     /*
      * If the state changes for any reason, cancel 'delayed auto state
@@ -2074,152 +2088,158 @@ isc_result_t dhcp_failover_set_state (dhcp_failover_state_t *state,
     cancel_timeout(dhcp_failover_auto_partner_down, state);
 
     /* Set our service state. */
-    dhcp_failover_set_service_state (state);
+    dhcp_failover_set_service_state(state);
 
     /* Tell the peer about it. */
-    if (state -> link_to_peer)
-	    dhcp_failover_send_state (state);
+    if (state->link_to_peer)
+	    dhcp_failover_send_state(state);
 
-    switch (new_state) {
-	  case communications_interrupted:
-	    /*
-	     * There is an optional feature to automatically enter partner
-	     * down after a timer expires, upon entering comms-interrupted.
-	     * This feature is generally not safe except in specific
-	     * circumstances.
-	     *
-	     * A zero value (also the default) disables it.
-	     */
-	    if (state->auto_partner_down == 0)
-		break;
+    switch (new_state) 
+	{
+		case communications_interrupted:
+		     /*
+		     * There is an optional feature to automatically enter partner
+		     * down after a timer expires, upon entering comms-interrupted.
+		     * This feature is generally not safe except in specific
+		     * circumstances.
+		     *
+		     * A zero value (also the default) disables it.
+		     */
+		    if (state->auto_partner_down == 0)
+				break;
 
 #if defined (DEBUG_FAILOVER_TIMING)
 	    log_info("add_timeout +%lu dhcp_failover_auto_partner_down",
 		      (unsigned long)state->auto_partner_down);
 #endif
-	    tv.tv_sec = cur_time + state->auto_partner_down;
-	    tv.tv_usec = 0;
-	    add_timeout(&tv, dhcp_failover_auto_partner_down, state,
-			(tvref_t)omapi_object_reference,
-			(tvunref_t)omapi_object_dereference);
-	    break;
+		    tv.tv_sec = cur_time + state->auto_partner_down;
+		    tv.tv_usec = 0;
+		    add_timeout(&tv, dhcp_failover_auto_partner_down, state,
+				(tvref_t)omapi_object_reference,
+				(tvunref_t)omapi_object_dereference);
+		    break;
 
-	  case normal:
-	    /* Upon entering normal state, the server is expected to retransmit
-	     * all pending binding updates.  This is a good opportunity to
-	     * rebalance the pool (potentially making new pending updates),
-	     * which also schedules the next pool rebalance.
-	     */
-	    dhcp_failover_pool_balance(state);
-	    dhcp_failover_generate_update_queue(state, 0);
+		case normal:
+			/* Upon entering normal state, the server is expected to retransmit
+			* all pending binding updates.  This is a good opportunity to
+			* rebalance the pool (potentially making new pending updates),
+			* which also schedules the next pool rebalance.
+			*/
+		    dhcp_failover_pool_balance(state);
+		    dhcp_failover_generate_update_queue(state, 0);
 
-	    if (state->update_queue_tail != NULL) {
-		dhcp_failover_send_updates(state);
-		log_info("Sending updates to %s.", state->name);
-	    }
+		    if (state->update_queue_tail != NULL) 
+			{
+				dhcp_failover_send_updates(state);
+				log_info("Sending updates to %s.", state->name);
+		    }
 
-	    break;
+		    break;
 
-	  case potential_conflict:
-	    if ((state->i_am == primary) ||
-		((state->i_am == secondary) &&
-		 (state->partner.state == conflict_done)))
-		    dhcp_failover_send_update_request (state);
-	    break;
+		case potential_conflict:
+		    if ((state->i_am == primary) ||
+					((state->i_am == secondary) &&
+			 		(state->partner.state == conflict_done)))
+			    dhcp_failover_send_update_request (state);
+		    break;
 
-	  case startup:
+		case startup:
 #if defined (DEBUG_FAILOVER_TIMING)
-	    log_info ("add_timeout +15 %s",
-		      "dhcp_failover_startup_timeout");
+	    	log_info ("add_timeout +15 dhcp_failover_startup_timeout");
 #endif
-	    tv . tv_sec = cur_time + 15;
-	    tv . tv_usec = 0;
-	    add_timeout (&tv,
-			 dhcp_failover_startup_timeout,
-			 state,
-			 (tvref_t)omapi_object_reference,
-			 (tvunref_t)
-			 omapi_object_dereference);
-	    break;
-
-	    /* If we come back in recover_wait and there's still waiting
-	       to do, set a timeout. */
-	  case recover_wait:
-	    if (state -> me.stos + state -> mclt > cur_time) {
-#if defined (DEBUG_FAILOVER_TIMING)
-		    log_info ("add_timeout +%d %s",
-			      (int)(cur_time -
-				    state -> me.stos + state -> mclt),
-			      "dhcp_failover_startup_timeout");
-#endif
-		    tv . tv_sec = (int)(state -> me.stos + state -> mclt);
-		    tv . tv_usec = 0;
-		    add_timeout (&tv,
-				 dhcp_failover_recover_done,
+		    tv.tv_sec = cur_time + 15;
+		    tv.tv_usec = 0;
+		    add_timeout(&tv,
+				 dhcp_failover_startup_timeout,
 				 state,
 				 (tvref_t)omapi_object_reference,
 				 (tvunref_t)
 				 omapi_object_dereference);
-	    } else
-		    dhcp_failover_recover_done (state);
-	    break;
+		    break;
 
-	  case recover:
-	    /* XXX: We're supposed to calculate if updreq or updreqall is
-	     * needed.  In theory, we should only have to updreqall if we
-	     * are positive we lost our stable storage.
-	     */
-	    if (state -> link_to_peer)
-		    dhcp_failover_send_update_request_all (state);
-	    break;
-
-	  case partner_down:
-	    /* For every expired lease, set a timeout for it to become free. */
-	    for (s = shared_networks; s; s = s->next) {
-		for (p = s->pools; p; p = p->next) {
-#if defined (BINARY_LEASES)
-		    long int tiebreaker = 0;
-#endif
-		    if (p->failover_peer == state) {
-			for (l = LEASE_GET_FIRST(p->expired);
-			     l != NULL;
-			     l = LEASE_GET_NEXT(p->expired, l)) {
-			    l->tsfp = state->me.stos + state->mclt;
-			    l->sort_time = (l->tsfp > l->ends) ?
-					   l->tsfp : l->ends;
-#if defined (BINARY_LEASES)
-			    /* If necessary fix up the tiebreaker so the leases
-			     * maintain proper sort order.
-			     */
-			    l->sort_tiebreaker = tiebreaker;
-			    if (tiebreaker != LONG_MAX)
-			        tiebreaker++;
-#endif
-
-			}
-
-			l = LEASE_GET_FIRST(p->expired);
-			if (l && (l->sort_time < p->next_event_time)) {
-
-			    p->next_event_time = l->sort_time;
+	    /* If we come back in recover_wait and there's still waiting
+	       to do, set a timeout. */
+		case recover_wait:
+			if (state->me.stos + state->mclt > cur_time) 
+			{
 #if defined (DEBUG_FAILOVER_TIMING)
 			    log_info ("add_timeout +%d %s",
-				      (int)(cur_time - p->next_event_time),
-				      "pool_timer");
+				      (int)(cur_time -
+					    state -> me.stos + state -> mclt),
+				      "dhcp_failover_startup_timeout");
 #endif
-			    tv.tv_sec = p->next_event_time;
-			    tv.tv_usec = 0;
-			    add_timeout(&tv, pool_timer, p,
-					(tvref_t)pool_reference,
-					(tvunref_t)pool_dereference);
+			    tv . tv_sec = (int)(state -> me.stos + state -> mclt);
+			    tv . tv_usec = 0;
+			    add_timeout (&tv,
+					 dhcp_failover_recover_done,
+					 state,
+					 (tvref_t)omapi_object_reference,
+					 (tvunref_t)
+					 omapi_object_dereference);
+	    	} 
+			else
+		    	dhcp_failover_recover_done(state);
+	   		break;
+
+		case recover:
+		    /* XXX: We're supposed to calculate if updreq or updreqall is
+		     * needed.  In theory, we should only have to updreqall if we
+		     * are positive we lost our stable storage.
+		     */
+			if (state->link_to_peer)
+				dhcp_failover_send_update_request_all(state);
+			break;
+
+		case partner_down:
+		/* For every expired lease, set a timeout for it to become free. */
+		for (s = shared_networks; s; s = s->next) 
+		{
+			for (p = s->pools; p; p = p->next) 
+			{
+#if defined (BINARY_LEASES)
+		    	long int tiebreaker = 0;
+#endif
+			    if (p->failover_peer == state) 
+				{
+					for (l = LEASE_GET_FIRST(p->expired); l != NULL;
+				     		l = LEASE_GET_NEXT(p->expired, l)) 
+					{
+					    l->tsfp = state->me.stos + state->mclt;
+					    l->sort_time = (l->tsfp > l->ends) ?
+							   l->tsfp : l->ends;
+#if defined (BINARY_LEASES)
+					    /* If necessary fix up the tiebreaker so the leases
+					     * maintain proper sort order.
+					     */
+					    l->sort_tiebreaker = tiebreaker;
+					    if (tiebreaker != LONG_MAX)
+					        tiebreaker++;
+#endif
+
+					}
+
+					l = LEASE_GET_FIRST(p->expired);
+					if (l && (l->sort_time < p->next_event_time)) 
+					{
+				    	p->next_event_time = l->sort_time;
+#if defined (DEBUG_FAILOVER_TIMING)
+					    log_info ("add_timeout +%d %s",
+						      (int)(cur_time - p->next_event_time),
+						      "pool_timer");
+#endif
+					    tv.tv_sec = p->next_event_time;
+					    tv.tv_usec = 0;
+					    add_timeout(&tv, pool_timer, p,
+							(tvref_t)pool_reference,
+							(tvunref_t)pool_dereference);
+					}
+		    	}
 			}
-		    }
-		}
 	    }
 	    break;
 
-	  default:
-	    break;
+		default:
+			break;
     }
 
     return ISC_R_SUCCESS;
