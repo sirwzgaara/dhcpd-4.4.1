@@ -1439,7 +1439,7 @@ Description:  Signal handler for protocol state machine
 Input:	      
 Output:       
 Return:       None
-Caution : 	  state事件处理接口
+Caution : 	  state事件处理接口,根据收到的报文改变自己的state状态
 *********************************************************************/
 isc_result_t dhcp_failover_state_signal 
 (
@@ -1459,8 +1459,8 @@ isc_result_t dhcp_failover_state_signal
 	state = (dhcp_failover_state_t *)o;
 
 	/* Not a signal we recognize? */
-	if (strcmp (name, "disconnect") &&
-	    strcmp (name, "message")) 
+	/* 若不是disconnect或者message，进入网络连接事件处理函数 */
+	if (strcmp(name, "disconnect") && strcmp(name, "message"))
 	{
 		if (state->inner && state->inner->type->signal_handler)
 			return (*(state->inner->type->signal_handler))
@@ -1470,13 +1470,13 @@ isc_result_t dhcp_failover_state_signal
 
 	/* Handle connect signals by seeing what state we're in
 	   and potentially doing a state transition. */
-	if (!strcmp (name, "disconnect")) 
+	if (!strcmp(name, "disconnect")) 
 	{
 		link = va_arg(ap, dhcp_failover_link_t *);
 
-		dhcp_failover_link_dereference(&state -> link_to_peer, MDL);
+		dhcp_failover_link_dereference(&state->link_to_peer, MDL);
 		dhcp_failover_state_transition(state, "disconnect");
-		if (state->i_am == primary) 
+		if (state->i_am == primary)
 		{
 #if defined (DEBUG_FAILOVER_TIMING)
 			log_info ("add_timeout +90 %s",
@@ -1512,7 +1512,7 @@ isc_result_t dhcp_failover_state_signal
 				return ISC_R_SUCCESS;
 			}
 			
-			if (!(link->imsg->options_present & FTB_MCLT)) 
+			if (!(link->imsg->options_present & FTB_MCLT))
 			{
 				dhcp_failover_send_connectack
 					((omapi_object_t *)link, state,
@@ -1522,8 +1522,7 @@ isc_result_t dhcp_failover_state_signal
 				return ISC_R_SUCCESS;
 			}
 
-			dhcp_failover_link_reference(&state->link_to_peer,
-						      link, MDL);
+			dhcp_failover_link_reference(&state->link_to_peer, link, MDL);
 			status = (dhcp_failover_send_connectack((omapi_object_t *)link, state, 0, 0));
 			if (status != ISC_R_SUCCESS) 
 			{
@@ -1542,11 +1541,11 @@ isc_result_t dhcp_failover_state_signal
 				state->partner.max_response_delay =
 					link->imsg->receive_timer;
 			state->mclt = link->imsg->mclt;
-			dhcp_failover_send_state (state);
+			dhcp_failover_send_state(state);
 			cancel_timeout (dhcp_failover_link_startup_timeout,
 					link);
 		}
-		else if (link -> imsg -> type == FTM_CONNECTACK) 
+		else if (link->imsg->type == FTM_CONNECTACK) 
 		{
 		    const char *errmsg;
 		    char errbuf[1024];
@@ -1590,25 +1589,26 @@ isc_result_t dhcp_failover_state_signal
 							       reason, errmsg);
 				omapi_disconnect (link -> outer, 0);
 				return ISC_R_SUCCESS;
-			    }
+			}
 
-			    if (state -> link_to_peer) {
+			if (state->link_to_peer) 
+			{
 				errmsg = "already connected";
 				reason = FTR_DUP_CONNECTION;
 				goto badconnectack;
 		    }
 
-		    if ((cur_time > link -> imsg -> time &&
-					 cur_time - link -> imsg -> time > 60) ||
-					(cur_time < link -> imsg -> time &&
-					 link -> imsg -> time - cur_time > 60)) 
+		    if ((cur_time > link->imsg->time &&
+					 cur_time - link->imsg->time > 60) ||
+					(cur_time < link->imsg->time &&
+					 link->imsg->time - cur_time > 60)) 
 			{
 			    errmsg = "time offset too large";
 			    reason = FTR_TIMEMISMATCH;
 			    goto badconnectack;
 		    }
 
-		    dhcp_failover_link_reference(&state -> link_to_peer, link, MDL);
+		    dhcp_failover_link_reference(&state->link_to_peer, link, MDL);
 #if 0
 		    /* XXX This is probably the right thing to do, but
 		       XXX for release three, to make the smallest possible
@@ -1619,7 +1619,7 @@ isc_result_t dhcp_failover_state_signal
 						     state -> saved_state);
 		    else
 #endif
-			dhcp_failover_send_state (state);
+			dhcp_failover_send_state(state);
 
 		    if (link->imsg->options_present & FTB_MAX_UNACKED)
 			    state->partner.max_flying_updates = link->imsg->max_unacked;
@@ -1630,6 +1630,7 @@ isc_result_t dhcp_failover_state_signal
 			      (int)state -> partner.max_response_delay / 3,
 			      "dhcp_failover_send_contact");
 #endif
+			/* 到超时时间的1/3，仍然没有报文交互，发送心跳报文 */
 		    tv.tv_sec = cur_time +
 			    (int)state->partner.max_response_delay / 3;
 		    tv.tv_usec = 0;
@@ -1642,6 +1643,7 @@ isc_result_t dhcp_failover_state_signal
 			      (int)state -> me.max_response_delay,
 			      "dhcp_failover_timeout");
 #endif
+			/* 这个时间默认是20秒，超过这个时间超时 */
 		    tv.tv_sec = cur_time + (int)state->me.max_response_delay;
 		    tv.tv_usec = 0;
 		    add_timeout (&tv,
@@ -1697,9 +1699,9 @@ isc_result_t dhcp_failover_state_signal
 			      (int)state -> me.max_response_delay,
 			      "dhcp_failover_timeout");
 #endif
-		    tv . tv_sec = cur_time +
-			    (int)state -> me.max_response_delay;
-		    tv . tv_usec = 0;
+		    tv.tv_sec = cur_time +
+			    (int)state->me.max_response_delay;
+		    tv.tv_usec = 0;
 		    add_timeout(&tv,
 				 dhcp_failover_timeout, state,
 				 (tvref_t)dhcp_failover_state_reference,
@@ -1712,136 +1714,142 @@ isc_result_t dhcp_failover_state_signal
 	return ISC_R_SUCCESS;
 }
 
-isc_result_t dhcp_failover_state_transition (dhcp_failover_state_t *state,
-					     const char *name)
+/*********************************************************************
+Func Name :   dhcp_failover_state_transition
+Date Created: 2018/07/09
+Author:  	  wangzhe
+Description:  改变本地failover状态
+Input:	      
+Output:       
+Return:       None
+Caution : 	  
+*********************************************************************/
+isc_result_t dhcp_failover_state_transition 
+(
+	dhcp_failover_state_t *state,
+	const char *name
+)
 {
 	isc_result_t status;
 
 	/* XXX Check these state transitions against the spec! */
-	if (!strcmp (name, "disconnect")) 
+	if (!strcmp(name, "disconnect")) 
 	{
-		if (state -> link_to_peer) 
+		if (state->link_to_peer) 
 		{
-		    log_info ("peer %s: disconnected", state -> name);
-		    if (state -> link_to_peer -> state_object)
-			dhcp_failover_state_dereference
-				(&state -> link_to_peer -> state_object, MDL);
-		    dhcp_failover_link_dereference (&state -> link_to_peer,
-						    MDL);
+		    log_info("peer %s: disconnected", state->name);
+		    if (state->link_to_peer->state_object)
+				dhcp_failover_state_dereference(&state->link_to_peer->state_object, MDL);
+		    dhcp_failover_link_dereference(&state->link_to_peer, MDL);
 		}
 		
-		cancel_timeout (dhcp_failover_send_contact, state);
-		cancel_timeout (dhcp_failover_timeout, state);
-		cancel_timeout (dhcp_failover_startup_timeout, state);
+		cancel_timeout(dhcp_failover_send_contact, state);
+		cancel_timeout(dhcp_failover_timeout, state);
+		cancel_timeout(dhcp_failover_startup_timeout, state);
 
-		switch (state -> me.state == startup ?
-			state -> saved_state : state -> me.state) 
+		switch (state->me.state == startup ?
+			state->saved_state : state->me.state) 
 		{
-		      /* In these situations, we remain in the current
-		       * state, or if in startup enter those states.
-		       */
-		      case conflict_done:
-			/* As the peer may not have received or may have
-			 * lost track of updates we sent previously we
-			 * rescind them, causing us to retransmit them
-			 * on an update request.
-			 */
-			dhcp_failover_rescind_updates(state);
-			/* fall through */
+			/* In these situations, we remain in the current
+			* state, or if in startup enter those states.
+			*/
+		    case conflict_done:
+				/* As the peer may not have received or may have
+				* lost track of updates we sent previously we
+				* rescind them, causing us to retransmit them
+				* on an update request.
+				*/
+				dhcp_failover_rescind_updates(state);
+				/* fall through */
 
-		      case communications_interrupted:
-		      case partner_down:
-		      case paused:
-		      case recover:
-		      case recover_done:
-		      case recover_wait:
-		      case resolution_interrupted:
-		      case shut_down:
-			/* Already in the right state? */
-			if (state -> me.state == startup)
-				return (dhcp_failover_set_state
-					(state, state -> saved_state));
-			return ISC_R_SUCCESS;
+			case communications_interrupted:
+			case partner_down:
+			case paused:
+			case recover:
+			case recover_done:
+			case recover_wait:
+			case resolution_interrupted:
+			case shut_down:
+				/* Already in the right state? */
+				if (state -> me.state == startup)
+					return (dhcp_failover_set_state
+						(state, state -> saved_state));
+				return ISC_R_SUCCESS;
 
-		      case potential_conflict:
-			return dhcp_failover_set_state
-				(state, resolution_interrupted);
+		    case potential_conflict:
+				return dhcp_failover_set_state(state, resolution_interrupted);
 
-		      case normal:
-			return dhcp_failover_set_state
-				(state, communications_interrupted);
+		    case normal:
+				return dhcp_failover_set_state(state, communications_interrupted);
 
-		      case unknown_state:
-			return dhcp_failover_set_state
-				(state, resolution_interrupted);
+		    case unknown_state:
+				return dhcp_failover_set_state(state, resolution_interrupted);
 
-		      default:
-			log_fatal("Impossible case at %s:%d.", MDL);
-			break;	/* can't happen. */
+		    default:
+				log_fatal("Impossible case at %s:%d.", MDL);
+				break;	/* can't happen. */
 		}
 	}
-	else if (!strcmp (name, "connect")) 
+	else if (!strcmp(name, "connect")) 
 	{
 		switch (state -> me.state) {
-		      case communications_interrupted:
-			status = dhcp_failover_set_state (state, normal);
-			dhcp_failover_send_updates (state);
-			return status;
+			case communications_interrupted:
+				status = dhcp_failover_set_state(state, normal);
+				dhcp_failover_send_updates(state);
+				return status;
 
-		      case resolution_interrupted:
-			return dhcp_failover_set_state (state,
-							potential_conflict);
+			case resolution_interrupted:
+				return dhcp_failover_set_state(state,potential_conflict);
 
-		      case conflict_done:
-		      case partner_down:
-		      case potential_conflict:
-		      case normal:
-		      case recover:
-		      case shut_down:
-		      case paused:
-		      case unknown_state:
-		      case recover_done:
-		      case startup:
-		      case recover_wait:
-			return dhcp_failover_send_state (state);
+			case conflict_done:
+			case partner_down:
+			case potential_conflict:
+			case normal:
+			case recover:
+			case shut_down:
+			case paused:
+			case unknown_state:
+			case recover_done:
+			case startup:
+			case recover_wait:
+				return dhcp_failover_send_state (state);
 
-		      default:
-			log_fatal("Impossible case at %s:%d.", MDL);
-			break;
+			default:
+				log_fatal("Impossible case at %s:%d.", MDL);
+				break;
 		}
 	} 
 	else if (!strcmp (name, "startup")) 
 	{
-		dhcp_failover_set_state (state, startup);
+		dhcp_failover_set_state(state, startup);
 		return ISC_R_SUCCESS;
 	} 
 	else if (!strcmp (name, "connect-timeout")) 
 	{
-		switch (state -> me.state) {
-		      case communications_interrupted:
-		      case partner_down:
-		      case resolution_interrupted:
-		      case paused:
-		      case startup:
-		      case shut_down:
-		      case conflict_done:
-			return ISC_R_SUCCESS;
+		switch (state->me.state) 
+		{
+			case communications_interrupted:
+			case partner_down:
+			case resolution_interrupted:
+			case paused:
+			case startup:
+			case shut_down:
+			case conflict_done:
+				return ISC_R_SUCCESS;
 
-		      case normal:
-		      case recover:
-		      case recover_wait:
-		      case recover_done:
-		      case unknown_state:
-			return dhcp_failover_set_state
-				(state, communications_interrupted);
+			case normal:
+			case recover:
+			case recover_wait:
+			case recover_done:
+			case unknown_state:
+				return dhcp_failover_set_state(state, communications_interrupted);
 
-		      case potential_conflict:
-			return dhcp_failover_set_state
-				(state, resolution_interrupted);
+			case potential_conflict:
+			return dhcp_failover_set_state(state, resolution_interrupted);
 
-		      default:
-			log_fatal("Impossible case at %s:%d.", MDL);
-			break;
+			default:
+				log_fatal("Impossible case at %s:%d.", MDL);
+				break;
 		}
 	}
 	
