@@ -98,9 +98,22 @@ isc_result_t omapi_connect (omapi_object_t *c,
 	return status;
 }
 
-isc_result_t omapi_connect_list (omapi_object_t *c,
-				 omapi_addr_list_t *remote_addrs,
-				 omapi_addr_t *local_addr)
+/*********************************************************************
+Func Name :   omapi_connect_list
+Date Created: 2018/07/10
+Author:  	  wangzhe
+Description:  和所有failover对端建立连接
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution : 
+*********************************************************************/
+isc_result_t omapi_connect_list 
+(
+	omapi_object_t *c,
+	omapi_addr_list_t *remote_addrs,
+	omapi_addr_t *local_addr
+)
 {
 	isc_result_t status;
 	omapi_connection_object_t *obj;
@@ -112,22 +125,25 @@ isc_result_t omapi_connect_list (omapi_object_t *c,
 	if (status != ISC_R_SUCCESS)
 		return status;
 
-	status = omapi_object_reference (&c -> outer, (omapi_object_t *)obj,
-					 MDL);
-	if (status != ISC_R_SUCCESS) {
-		omapi_connection_dereference (&obj, MDL);
+	/* listener->inner = connection, connection->outer = listener */
+	status = omapi_object_reference(&c->outer, (omapi_object_t *)obj, MDL);
+	if (status != ISC_R_SUCCESS) 
+	{
+		omapi_connection_dereference(&obj, MDL);
 		return status;
 	}
-	status = omapi_object_reference (&obj -> inner, c, MDL);
-	if (status != ISC_R_SUCCESS) {
+	
+	status = omapi_object_reference(&obj->inner, c, MDL);
+	if (status != ISC_R_SUCCESS) 
+	{
 		omapi_connection_dereference (&obj, MDL);
 		return status;
 	}
 
 	/* Store the address list on the object. */
-	omapi_addr_list_reference (&obj -> connect_list, remote_addrs, MDL);
-	obj -> cptr = 0;
-	obj -> state = omapi_connection_unconnected;
+	omapi_addr_list_reference(&obj->connect_list, remote_addrs, MDL);
+	obj->cptr = 0;
+	obj->state = omapi_connection_unconnected;
 
 #if defined (TRACING)
 	/* If we're playing back, don't actually try to connect - just leave
@@ -135,37 +151,37 @@ isc_result_t omapi_connect_list (omapi_object_t *c,
 	if (!trace_playback ()) {
 #endif
 		/* Create a socket on which to communicate. */
-		obj -> socket =
-			socket (PF_INET, SOCK_STREAM, IPPROTO_TCP);
-		if (obj -> socket < 0) {
-			omapi_connection_dereference (&obj, MDL);
-			if (errno == EMFILE || errno == ENFILE
-			    || errno == ENOBUFS)
+		obj->socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+		if (obj->socket < 0) 
+		{
+			omapi_connection_dereference(&obj, MDL);
+			if (errno == EMFILE || errno == ENFILE || errno == ENOBUFS)
 				return ISC_R_NORESOURCES;
+			
 			return ISC_R_UNEXPECTED;
 		}
 
 		/* Set up the local address, if any. */
-		if (local_addr) {
+		if (local_addr) 
+		{
 			/* Only do TCPv4 so far. */
-			if (local_addr -> addrtype != AF_INET) {
+			if (local_addr->addrtype != AF_INET) 
+			{
 				close(obj->socket);
-				omapi_connection_dereference (&obj, MDL);
+				omapi_connection_dereference(&obj, MDL);
 				return DHCP_R_INVALIDARG;
 			}
-			local_sin.sin_port = htons (local_addr -> port);
-			memcpy (&local_sin.sin_addr,
-				local_addr -> address,
-				local_addr -> addrlen);
+			
+			local_sin.sin_port = htons(local_addr->port);
+			memcpy(&local_sin.sin_addr, local_addr->address, local_addr->addrlen);
 #if defined (HAVE_SA_LEN)
 			local_sin.sin_len = sizeof local_addr;
 #endif
 			local_sin.sin_family = AF_INET;
-			memset (&local_sin.sin_zero, 0,
-				sizeof local_sin.sin_zero);
+			memset(&local_sin.sin_zero, 0, sizeof local_sin.sin_zero);
 			
-			if (bind (obj -> socket, (struct sockaddr *)&local_sin,
-				  sizeof local_sin) < 0) {
+			if (bind(obj->socket, (struct sockaddr *)&local_sin, sizeof local_sin) < 0) 
+			{
 				omapi_connection_object_t **objp = &obj;
 				omapi_object_t **o = (omapi_object_t **)objp;
 				close(obj->socket);
@@ -178,7 +194,8 @@ isc_result_t omapi_connect_list (omapi_object_t *c,
 					return ISC_R_NOPERM;
 				return ISC_R_UNEXPECTED;
 			}
-			obj -> local_addr = local_sin;
+			
+			obj->local_addr = local_sin;
 		}
 
 #if defined(F_SETFD)
@@ -191,14 +208,16 @@ isc_result_t omapi_connect_list (omapi_object_t *c,
 
 		/* Set the SO_REUSEADDR flag (this should not fail). */
 		flag = 1;
-		if (setsockopt (obj -> socket, SOL_SOCKET, SO_REUSEADDR,
-				(char *)&flag, sizeof flag) < 0) {
-			omapi_connection_dereference (&obj, MDL);
+		if (setsockopt(obj->socket, SOL_SOCKET, SO_REUSEADDR,
+				(char *)&flag, sizeof flag) < 0) 
+		{
+			omapi_connection_dereference(&obj, MDL);
 			return ISC_R_UNEXPECTED;
 		}
 	
 		/* Set the file to nonblocking mode. */
-		if (fcntl (obj -> socket, F_SETFL, O_NONBLOCK) < 0) {
+		if (fcntl(obj->socket, F_SETFL, O_NONBLOCK) < 0) 
+		{
 			omapi_connection_dereference (&obj, MDL);
 			return ISC_R_UNEXPECTED;
 		}
@@ -223,8 +242,7 @@ isc_result_t omapi_connect_list (omapi_object_t *c,
 			   omapi_connection_reaper));
 		if (status != ISC_R_SUCCESS)
 			goto out;
-		status = omapi_connection_connect_internal ((omapi_object_t *)
-							    obj);
+		status = omapi_connection_connect_internal((omapi_object_t *)obj);
 		/*
 		 * inprogress is the same as success but used
 		 * to indicate to the dispatch code that we should
@@ -232,7 +250,8 @@ isc_result_t omapi_connect_list (omapi_object_t *c,
 		 * Routines calling this function should handle
 		 * success properly.
 		 */
-		if (status == ISC_R_INPROGRESS) {
+		if (status == ISC_R_INPROGRESS) 
+		{
 			status = ISC_R_SUCCESS;
 		}
 #if defined (TRACING)

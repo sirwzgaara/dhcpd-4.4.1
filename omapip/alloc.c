@@ -536,7 +536,7 @@ isc_result_t omapi_object_allocate (omapi_object_t **o,
 	if (status == ISC_R_NOMEMORY) 
 	{
 		if (type->sizer)
-			tsize = (*type->sizer) (size);
+			tsize = (*type->sizer)(size);
 		else
 			tsize = type->size;
 		
@@ -553,7 +553,7 @@ isc_result_t omapi_object_allocate (omapi_object_t **o,
 	if (status != ISC_R_SUCCESS) 
 	{
 		if (type->freer)
-			(*type->freer) (foo, file, line);
+			(*type->freer)(foo, file, line);
 		else
 			dfree(foo, file, line);
 		return status;
@@ -567,9 +567,10 @@ isc_result_t omapi_object_initialize (omapi_object_t *o,
 				      const char *file, int line)
 {
 	memset (o, 0, psize);
-	o -> type = type;
-	if (type -> initialize)
-		(*type -> initialize) (o, file, line);
+	o->type = type;
+	if (type->initialize)
+		(*type->initialize)(o, file, line);
+	
 	return ISC_R_SUCCESS;
 }
 

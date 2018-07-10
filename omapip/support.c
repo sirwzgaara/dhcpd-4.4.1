@@ -479,29 +479,43 @@ isc_result_t omapi_get_value (omapi_object_t *h,
 	return ISC_R_NOTFOUND;
 }
 
-isc_result_t omapi_get_value_str (omapi_object_t *h,
-				  omapi_object_t *id,
-				  const char *name,
-				  omapi_value_t **value)
+/*********************************************************************
+Func Name :   omapi_get_value_str
+Date Created: 2018/07/10
+Author:  	  wangzhe
+Description:  从omapi对象中获取值
+Input:	      
+Output:       
+Return:       None
+Caution : 	  
+*********************************************************************/
+isc_result_t omapi_get_value_str 
+(
+	omapi_object_t *h,
+	omapi_object_t *id,
+	const char *name,
+	omapi_value_t **value
+)
 {
 	omapi_object_t *outer;
 	omapi_data_string_t *nds;
 	isc_result_t status;
 
 	nds = (omapi_data_string_t *)0;
-	status = omapi_data_string_new (&nds, strlen (name), MDL);
+	status = omapi_data_string_new(&nds, strlen (name), MDL);
 	if (status != ISC_R_SUCCESS)
 		return status;
-	memcpy (nds -> value, name, strlen (name));
+	memcpy(nds->value, name, strlen(name));
 
-	for (outer = h; outer -> outer; outer = outer -> outer)
+	for (outer = h; outer->outer; outer = outer->outer)
 		;
-	if (outer -> type -> get_value)
-		status = (*(outer -> type -> get_value)) (outer,
-							  id, nds, value);
+	if (outer->type->get_value)
+		status = (*(outer->type->get_value))(outer, id, nds, value);
 	else
 		status = ISC_R_NOTFOUND;
+	
 	omapi_data_string_dereference (&nds, MDL);
+	
 	return status;
 }
 
