@@ -978,22 +978,29 @@ void parse_failover_peer
 	isc_result_t status;
 	dhcp_failover_config_t *cp;
 
-	token = next_token (&val, (unsigned *)0, cfile);
-	if (token != PEER) {
+	/* configuration in dhcpd.conf : failover peer "name"{etc.} */
+	token = next_token(&val, (unsigned *)0, cfile);
+	if (token != PEER) 
+	{
 		parse_warn (cfile, "expecting \"peer\"");
 		skip_to_semi (cfile);
+		
 		return;
 	}
 
-	token = next_token (&val, (unsigned *)0, cfile);
-	if (is_identifier (token) || token == STRING) {
-		name = dmalloc (strlen (val) + 1, MDL);
+	token = next_token(&val, (unsigned *)0, cfile);
+	if (is_identifier(token) || token == STRING) 
+	{
+		name = dmalloc(strlen (val) + 1, MDL);
 		if (!name)
-			log_fatal ("no memory for peer name %s", name);
-		strcpy (name, val);
-	} else {
-		parse_warn (cfile, "expecting failover peer name.");
-		skip_to_semi (cfile);
+			log_fatal("no memory for peer name %s", name);
+		strcpy(name, val);
+	} 
+	else 
+	{
+		parse_warn(cfile, "expecting failover peer name.");
+		skip_to_semi(cfile);
+		
 		return;
 	}
 
@@ -1007,34 +1014,41 @@ void parse_failover_peer
 		if (type != SHARED_NET_DECL)
 			parse_warn (cfile, "failover peer reference not %s",
 				    "in shared-network declaration");
-		else {
-			if (!peer) {
+		else 
+		{
+			if (!peer) 
+			{
 				parse_warn (cfile, "reference to unknown%s%s",
 					    " failover peer ", name);
                                 dfree (name, MDL);
 				return;
 			}
-			dhcp_failover_state_reference
-				(&group -> shared_network -> failover_peer,
+			dhcp_failover_state_reference(&group->shared_network->failover_peer,
 				 peer, MDL);
 		}
 		dhcp_failover_state_dereference (&peer, MDL);
                 dfree (name, MDL);
 		return;
-	} else if (token == STATE) {
-		if (!peer) {
+	}
+	else if (token == STATE) 
+	{
+		if (!peer) 
+		{
 			parse_warn (cfile, "state declaration for unknown%s%s",
 				    " failover peer ", name);
-                        dfree (name, MDL);
+            dfree (name, MDL);
 			return;
 		}
-		parse_failover_state_declaration (cfile, peer);
-		dhcp_failover_state_dereference (&peer, MDL);
-                dfree (name, MDL);
+		parse_failover_state_declaration(cfile, peer);
+		dhcp_failover_state_dereference(&peer, MDL);
+        dfree (name, MDL);
+		
 		return;
-	} else if (token != LBRACE) {
-		parse_warn (cfile, "expecting left brace");
-		skip_to_semi (cfile);
+	}
+	else if (token != LBRACE) 
+	{
+		parse_warn(cfile, "expecting left brace");
+		skip_to_semi(cfile);
 	}
 	
 	/* Make sure this isn't a redeclaration. */
@@ -1048,7 +1062,7 @@ void parse_failover_peer
 		return;
 	}
 
-	/* 分配内存，并挂接type为dhcp_type_failover_state */
+	/* 分配内存，在这里会挂接type为dhcp_type_failover_state */
 	status = dhcp_failover_state_allocate(&peer, MDL);
 	if (status != ISC_R_SUCCESS)
 		log_fatal ("Can't allocate failover peer %s: %s",
@@ -1063,10 +1077,10 @@ void parse_failover_peer
 		cp = &peer->me;
 	      peer:
 		token = next_token(&val, (unsigned *)0, cfile);
-		switch (token) {
+		switch (token) 
+		{
 		      case RBRACE:
 			break;
-			  /* 若配置了本端是主 */
 		      case PRIMARY:
 			peer->i_am = primary;
 			break;
@@ -1074,9 +1088,7 @@ void parse_failover_peer
 		      case SECONDARY:
 			peer->i_am = secondary;
 			if (peer->hba)
-				parse_warn (cfile,
-					    "secondary may not define %s",
-					    "load balance settings.");
+				parse_warn(cfile, "secondary may not define load balance settings.");
 			break;
 			  /* 若有peer字段，后面必然还有其他字段，重新进入循环解析过程 */
 		      case PEER:
@@ -1088,21 +1100,22 @@ void parse_failover_peer
 			if (!parse_ip_addr_or_hostname(&expr, cfile, 0)) 
 			{
 				skip_to_rbrace(cfile, 1);
-				dhcp_failover_state_dereference (&peer, MDL);
+				dhcp_failover_state_dereference(&peer, MDL);
 				return;
 			}
-			option_cache (&cp -> address,
-				      (struct data_string *)0, expr,
+			option_cache(&cp->address, (struct data_string *)0, expr,
 				      (struct option *)0, MDL);
-			expression_dereference (&expr, MDL);
+			expression_dereference(&expr, MDL);
 			break;
-			  /* 若配置了端口号 */
+			
 		      case PORT:
-			token = next_token (&val, (unsigned *)0, cfile);
-			if (token != NUMBER) {
-				parse_warn (cfile, "expecting number");
-				skip_to_rbrace (cfile, 1);
+			token = next_token(&val, (unsigned *)0, cfile);
+			if (token != NUMBER) 
+			{
+				parse_warn(cfile, "expecting number");
+				skip_to_rbrace(cfile, 1);
 			}
+			
 			cp->port = atoi(val);
 			break;
 
@@ -1166,9 +1179,10 @@ void parse_failover_peer
 			}
 		      make_hba:
 			peer->hba = dmalloc(32, MDL);
-			if (!peer->hba) {
-				dfree (peer -> name, MDL);
-				dfree (peer, MDL);
+			if (!peer->hba) 
+			{
+				dfree(peer->name, MDL);
+				dfree(peer, MDL);
 			}
 			memcpy(peer->hba, hba, 32);
 			break;
@@ -1176,19 +1190,21 @@ void parse_failover_peer
 		      case SPLIT:
 			token = next_token(&val, (unsigned *)0, cfile);
 			if (peer->i_am == secondary)
-				parse_warn (cfile,
-					    "secondary may not define %s",
+				parse_warn (cfile, "secondary may not define %s",
 					    "load balance settings.");
-			if (token != NUMBER) {
-				parse_warn (cfile, "expecting number");
-				skip_to_rbrace (cfile, 1);
-				dhcp_failover_state_dereference (&peer, MDL);
+			if (token != NUMBER) 
+			{
+				parse_warn(cfile, "expecting number");
+				skip_to_rbrace(cfile, 1);
+				dhcp_failover_state_dereference(&peer, MDL);
+				
 				return;
 			}
-			split = atoi (val);
-			if (split > 256) {
-				parse_warn (cfile, "split must be between "
-                                                   "0 and 256, inclusive");
+			
+			split = atoi(val);
+			if (split > 256) 
+			{
+				parse_warn(cfile, "split must be between 0 and 256, inclusive");
 			} 
 			else 
 			{
@@ -1201,41 +1217,52 @@ void parse_failover_peer
 				goto make_hba;
 			}
 			break;
-			
+
+			  /* load balance max second 3 */
 		      case LOAD:
 			token = next_token (&val, (unsigned *)0, cfile);
-			if (token != BALANCE) {
+			if (token != BALANCE) 
+			{
 				parse_warn (cfile, "expecting 'balance'");
 			      badload:
-				skip_to_rbrace (cfile, 1);
+				skip_to_rbrace(cfile, 1);
 				break;
 			}
-			token = next_token (&val, (unsigned *)0, cfile);
-			if (token != TOKEN_MAX) {
-				parse_warn (cfile, "expecting 'max'");
+			
+			token = next_token(&val, (unsigned *)0, cfile);
+			if (token != TOKEN_MAX) 
+			{
+				parse_warn(cfile, "expecting 'max'");
 				goto badload;
 			}
-			token = next_token (&val, (unsigned *)0, cfile);
-			if (token != SECONDS) {
-				parse_warn (cfile, "expecting 'secs'");
+			
+			token = next_token(&val, (unsigned *)0, cfile);
+			if (token != SECONDS) 
+			{
+				parse_warn(cfile, "expecting 'secs'");
 				goto badload;
 			}
-			token = next_token (&val, (unsigned *)0, cfile);
-			if (token != NUMBER) {
-				parse_warn (cfile, "expecting number");
+			
+			token = next_token(&val, (unsigned *)0, cfile);
+			if (token != NUMBER) 
+			{
+				parse_warn(cfile, "expecting number");
 				goto badload;
 			}
+			
 			peer->load_balance_max_secs = atoi(val);
 			break;
 			
 		      default:
-			parse_warn (cfile,
-				    "invalid statement in peer declaration");
-			skip_to_rbrace (cfile, 1);
-			dhcp_failover_state_dereference (&peer, MDL);
+			parse_warn(cfile, "invalid statement in peer declaration");
+			skip_to_rbrace(cfile, 1);
+			dhcp_failover_state_dereference(&peer, MDL);
+			
 			return;
 		}
-		if (token != RBRACE && !parse_semi (cfile)) {
+		
+		if (token != RBRACE && !parse_semi (cfile)) 
+	{
 			skip_to_rbrace (cfile, 1);
 			dhcp_failover_state_dereference (&peer, MDL);
 			return;
@@ -1245,17 +1272,17 @@ void parse_failover_peer
 	/* me.address can be null; the failover link initiate code tries to
 	 * derive a reasonable address to use.
 	 */
-	if (!peer -> partner.address)
+	if (!peer->partner.address)
 		parse_warn (cfile, "peer address may not be omitted");
 
-	/* 默认端口号TCP647 */
+	/* default port number TCP647 */
 	if (!peer->me.port)
 		peer->me.port = DEFAULT_FAILOVER_PORT;
 	if (!peer->partner.port)
 		peer->partner.port = DEFAULT_FAILOVER_PORT;
 
+	/* primary must have hba, mclt */
 	if (peer->i_am == primary) 
-
 	{
 	    if (!peer->hba) {
 		parse_warn (cfile,
@@ -1291,9 +1318,8 @@ void parse_failover_peer
 	/* 将peer加入全局链表 */
 	status = enter_failover_peer(peer);
 	if (status != ISC_R_SUCCESS)
-		parse_warn (cfile, "failover peer %s: %s",
-			    peer -> name, isc_result_totext (status));
-	dhcp_failover_state_dereference (&peer, MDL);
+		parse_warn(cfile, "failover peer %s: %s", peer->name, isc_result_totext(status));
+	dhcp_failover_state_dereference(&peer, MDL);
 }
 
 /*********************************************************************

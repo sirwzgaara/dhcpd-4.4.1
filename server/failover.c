@@ -243,9 +243,6 @@ isc_result_t find_failover_peer
    listener object for each secondary failover_state object. */
 
 /* This, then, is the implementation of the failover link object. */
-/* failover有3个对象，在conf文件中指定主或者备，用一个failover_state对象管理，
-和另一个server建立联系，用一个failover_link对象管理，和协议无关，和网络上传来
-的字节相关，最后一个是用来监听的failover_state，这个函数是link对象的应用 */
 isc_result_t dhcp_failover_link_initiate(omapi_object_t *h)
 {
 	isc_result_t status;
@@ -1736,7 +1733,7 @@ isc_result_t dhcp_failover_state_signal
 Func Name :   dhcp_failover_state_transition
 Date Created: 2018/07/09
 Author:  	  wangzhe
-Description:  状态转换入口，name是要转换到的状态
+Description:  state对象转换入口，name是要转换到的状态
 Input:	      
 Output:       
 Return:       None
@@ -1789,9 +1786,8 @@ isc_result_t dhcp_failover_state_transition
 			case resolution_interrupted:
 			case shut_down:
 				/* Already in the right state? */
-				if (state -> me.state == startup)
-					return (dhcp_failover_set_state
-						(state, state -> saved_state));
+				if (state->me.state == startup)
+					return (dhcp_failover_set_state(state, state->saved_state));
 				return ISC_R_SUCCESS;
 
 		    case potential_conflict:
@@ -1841,7 +1837,7 @@ isc_result_t dhcp_failover_state_transition
 	{
 		dhcp_failover_set_state(state, startup);
 		return ISC_R_SUCCESS;
-	} 
+	}
 	else if (!strcmp(name, "connect-timeout")) 
 	{
 		switch (state->me.state) 
@@ -1930,8 +1926,8 @@ isc_result_t dhcp_failover_set_service_state (dhcp_failover_state_t *state)
 		break;
 
 	      case startup:
-		state -> service_state = service_startup;
-		state -> nrr = " (startup)";
+		state->service_state = service_startup;
+		state->nrr = " (startup)";
 		break;
 
 	      default:

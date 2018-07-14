@@ -193,17 +193,25 @@ omapi_iscsock_cb(isc_task_t   *task,
 	return (0);
 }
 
-/* Register an I/O handle so that we can do asynchronous I/O on it. */
-
-isc_result_t omapi_register_io_object (omapi_object_t *h,
-				       int (*readfd) (omapi_object_t *),
-				       int (*writefd) (omapi_object_t *),
-				       isc_result_t (*reader)
-						(omapi_object_t *),
-				       isc_result_t (*writer)
-						(omapi_object_t *),
-				       isc_result_t (*reaper)
-						(omapi_object_t *))
+/*********************************************************************
+Func Name :   omapi_register_io_object
+Date Created: 2018/07/13
+Author:  	  wangzhe
+Description:  Register an I/O handle so that we can do asynchronous I/O on it
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution : 
+*********************************************************************/
+isc_result_t omapi_register_io_object 
+(
+	omapi_object_t *h,
+	int (*readfd) (omapi_object_t *),
+	int (*writefd) (omapi_object_t *),
+	isc_result_t (*reader)(omapi_object_t *),
+	isc_result_t (*writer)(omapi_object_t *),
+	isc_result_t (*reaper)(omapi_object_t *)
+)
 {
 	isc_result_t status;
 	omapi_io_object_t *obj, *p;
@@ -214,27 +222,30 @@ isc_result_t omapi_register_io_object (omapi_object_t *h,
 	   we need to initialize it.   Because there is no inner or outer
 	   pointer on this object, and we're setting its refcnt to 1, it
 	   will never be freed. */
-	if (!omapi_io_states.refcnt) {
+	if (!omapi_io_states.refcnt) 
+	{
 		omapi_io_states.refcnt = 1;
-		omapi_io_states.type = omapi_type_io_object;
+		omapi_io_states.type   = omapi_type_io_object;
 	}
 		
 	obj = (omapi_io_object_t *)0;
-	status = omapi_io_allocate (&obj, MDL);
+	status = omapi_io_allocate(&obj, MDL);
 	if (status != ISC_R_SUCCESS)
 		return status;
+	
 	obj->closed = ISC_FALSE;  /* mark as open */
 
-	status = omapi_object_reference (&obj -> inner, h, MDL);
-	if (status != ISC_R_SUCCESS) {
-		omapi_io_dereference (&obj, MDL);
+	status = omapi_object_reference(&obj->inner, h, MDL);
+	if (status != ISC_R_SUCCESS) 
+	{
+		omapi_io_dereference(&obj, MDL);
 		return status;
 	}
 
-	status = omapi_object_reference (&h -> outer,
-					 (omapi_object_t *)obj, MDL);
-	if (status != ISC_R_SUCCESS) {
-		omapi_io_dereference (&obj, MDL);
+	status = omapi_object_reference(&h->outer, (omapi_object_t *)obj, MDL);
+	if (status != ISC_R_SUCCESS) 
+	{
+		omapi_io_dereference(&obj, MDL);
 		return status;
 	}
 
@@ -255,40 +266,40 @@ isc_result_t omapi_register_io_object (omapi_object_t *h,
 		fd = writefd(h);
 	}
 
-	if (fd_flags != 0) {
+	if (fd_flags != 0) 
+	{
 		status = isc_socket_fdwatchcreate(dhcp_gbl_ctx.socketmgr,
 						  fd, fd_flags,
 						  omapi_iscsock_cb,
 						  obj,
 						  dhcp_gbl_ctx.task,
 						  &obj->fd);
-		if (status != ISC_R_SUCCESS) {
-			log_error("Unable to register fd with library %s",
-				   isc_result_totext(status));
+		if (status != ISC_R_SUCCESS) 
+		{
+			log_error("Unable to register fd with library %s", isc_result_totext(status));
 
 			/*sar*/
 			/* is this the cleanup we need? */
 			omapi_object_dereference(&h->outer, MDL);
-			omapi_io_dereference (&obj, MDL);
-			return (status);
+			omapi_io_dereference(&obj, MDL);
+			return status;
 		}
 	}
 
-
 	/* Find the last I/O state, if there are any. */
 	for (p = omapi_io_states.next;
-	     p && p -> next; p = p -> next)
+	     p && p->next; p = p->next)
 		;
 	if (p)
-		omapi_io_reference (&p -> next, obj, MDL);
+		omapi_io_reference(&p->next, obj, MDL);
 	else
-		omapi_io_reference (&omapi_io_states.next, obj, MDL);
+		omapi_io_reference(&omapi_io_states.next, obj, MDL);
 
-	obj -> readfd = readfd;
-	obj -> writefd = writefd;
-	obj -> reader = reader;
-	obj -> writer = writer;
-	obj -> reaper = reaper;
+	obj->readfd  = readfd;
+	obj->writefd = writefd;
+	obj->reader  = reader;
+	obj->writer  = writer;
+	obj->reaper  = reaper;
 
 	omapi_io_dereference(&obj, MDL);
 	return ISC_R_SUCCESS;
