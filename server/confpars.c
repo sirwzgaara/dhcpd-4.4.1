@@ -30,6 +30,14 @@
 
 #include "dhcpd.h"
 
+extern unsigned int aio_enable;
+extern unsigned int fp_enable;
+extern unsigned int lps_enable;
+extern unsigned int max_lps;
+extern unsigned int dit;
+extern unsigned int dit_count;
+extern int lps_interval;
+
 static unsigned char global_host_once = 1;
 
 static int parse_binding_value(struct parse *cfile,
@@ -422,6 +430,90 @@ int parse_statement
 
 	/* 这个函数核心就是一个swtich，根据token的不同类型分别解析 */
 	switch (token) {
+		case AIO_ENABLE:
+             next_token(&val, (unsigned *)0, cfile);
+             token = next_token(&val, (unsigned *)0, cfile);
+             if (token != NAME) {
+               parse_warn(cfile, "aio_enable value expected.");
+               skip_to_semi(cfile);
+             }else {
+               aio_enable = strcasecmp(val, "false");
+               skip_to_semi(cfile);
+             }
+             return 1;
+
+	   case FP_ENABLE:
+              next_token(&val, (unsigned *)0, cfile);
+              token = next_token(&val, (unsigned *)0, cfile);
+              if (token != NAME) {
+                parse_warn(cfile, "fp_enable value expected.");
+                skip_to_semi(cfile);
+              }else {
+                fp_enable = strcasecmp(val, "false");
+                skip_to_semi(cfile);
+            }
+            return 1;
+
+        case LPS_ENABLE:
+            next_token(&val, (unsigned *)0, cfile);
+            token = next_token(&val, (unsigned *)0, cfile);
+            if (token != NAME) {
+                parse_warn(cfile, "lps_enable value expected.");
+                skip_to_semi(cfile);
+            }else {
+                lps_enable = strcasecmp(val, "false");
+
+
+                skip_to_semi(cfile);
+              }
+              return 1;
+
+            case LPS_INTERVAL:
+              next_token(&val, (unsigned *)0, cfile);
+              token = next_token(&val, (unsigned *)0, cfile);
+              if (token != NUMBER) {
+                parse_warn(cfile, "lps_interval number expected.");
+                skip_to_semi(cfile);
+              }else {
+                lps_interval = atoi(val);
+                skip_to_semi(cfile);
+              }
+              return 1;
+
+            case MAX_LPS:
+              next_token(&val, (unsigned *)0, cfile);
+              token = next_token(&val, (unsigned *)0, cfile);
+              if (token != NUMBER) {
+                parse_warn(cfile, "max_lps number expected.");
+                skip_to_semi(cfile);
+              }else {
+                max_lps = atoi(val);
+                skip_to_semi(cfile);
+              }
+              return 1;
+
+            case DIT:
+              next_token(&val, (unsigned *)0, cfile);
+              token = next_token(&val, (unsigned *)0, cfile);
+              if (token != NUMBER) {
+                parse_warn(cfile, "dit number expected.");
+                skip_to_semi(cfile);
+              }else {
+                dit = atoi(val);
+                skip_to_semi(cfile);
+              }
+              return 1;
+             case DIT_COUNT:
+              next_token(&val, (unsigned *)0, cfile);
+              token = next_token(&val, (unsigned *)0, cfile);
+             if (token != NUMBER) {
+                 parse_warn(cfile, "dit_count number expected");
+                 skip_to_semi(cfile);
+             }else {
+              dit_count = atoi(val);
+              skip_to_semi(cfile);
+             }
+            return 1;
 	      case INCLUDE:
 		skip_token(&val, (unsigned *)0, cfile);
 		token = next_token (&val, (unsigned *)0, cfile);

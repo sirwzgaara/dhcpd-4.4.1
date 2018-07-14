@@ -31,6 +31,15 @@
 #include <limits.h>
 #include <sys/time.h>
 
+unsigned int fp_enable = 1;
+unsigned int aio_enable = 1;
+unsigned int lps_enable = 1;
+unsigned int max_lps = -1;
+unsigned int ack_cnt = 0;
+int lps_interval = 1;
+unsigned int dit = 0; //discover interval threshold, default 10 second
+unsigned int dit_count = 0;
+
 static void maybe_return_agent_options(struct packet *packet,
 				       struct option_state *options);
 static int reuse_lease (struct packet* packet, struct lease* new_lease,
@@ -322,6 +331,32 @@ void dhcpdiscover
 #endif
 
 	find_lease(&lease, packet, packet->shared_network, 0, &peer_has_leases, (struct lease *)0, MDL);
+	if (dit && dit_count && lease && lease->cltt)
+	{
+		if (cur_time - lease->cltt < dit)
+		{
+			if (lease->it_count >= dit_count)
+			{
+				log_info("The frequency of discover is too high so package abandon, from %s",
+					(packet -> raw -> htype
+					? print_hw_addr (packet -> raw -> htype,
+									 packet -> raw -> hlen,
+									 packet -> raw -> chaddr)
+					: (lease
+					   ? print_hex_1(lease->uid_len, lease->uid, 60)
+					   : "<no identifier>")));
+					  goto out;
+			}
+			else
+			{
+				lease->it_count++;
+			}
+		}
+		else
+		{
+			lease->it_count = 1;
+		}
+	 }
 
 	/* 根据hostname是否可打印，给s赋值 */
 	if (lease && lease->client_hostname)
