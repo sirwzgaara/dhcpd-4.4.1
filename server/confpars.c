@@ -1354,7 +1354,7 @@ void parse_failover_peer
 		}
 		
 		if (token != RBRACE && !parse_semi (cfile)) 
-	{
+		{
 			skip_to_rbrace (cfile, 1);
 			dhcp_failover_state_dereference (&peer, MDL);
 			return;
@@ -1982,8 +1982,7 @@ void parse_pool_statement
 #if defined (FAILOVER_PROTOCOL)
 	/* Inherit the failover peer from the shared network. */
 	if (pool->shared_network->failover_peer)
-	    dhcp_failover_state_reference
-		    (&pool->failover_peer, 
+	    dhcp_failover_state_reference(&pool->failover_peer, 
 		     pool->shared_network->failover_peer, MDL);
 #endif
 
@@ -2030,8 +2029,7 @@ void parse_pool_statement
 			if (pool->failover_peer)
 				dhcp_failover_state_dereference
 					(&pool->failover_peer, MDL);
-			status = find_failover_peer(&pool->failover_peer,
-						    val, MDL);
+			status = find_failover_peer(&pool->failover_peer, val, MDL);
 			if (status != ISC_R_SUCCESS)
 				parse_warn(cfile,
 					   "failover peer %s: %s", val,
