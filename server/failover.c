@@ -491,7 +491,8 @@ isc_result_t dhcp_failover_link_signal
 
 	if (!h->outer || h->outer->type != omapi_type_connection)
 		return DHCP_R_INVALIDARG;
-	
+
+	/* get connection object */
 	c = h->outer;
 
 	/* We get here because we requested that we be woken up after
@@ -600,8 +601,7 @@ isc_result_t dhcp_failover_link_signal
 					goto dhcp_flink_fail;
 			}
 
-			/* If it's a connect message, try to associate it with
-			   a state object. */
+			/* If it's a connect message, try to associate it with a state object. */
 			/* XXX this should be authenticated! */
 			if (link->imsg->type == FTM_CONNECT) 
 			{
@@ -690,11 +690,9 @@ isc_result_t dhcp_failover_link_signal
 			    memcpy(state->hba, link->imsg->hba.data, 32);
 
 			    if (!link->state_object)
-				    dhcp_failover_state_reference
-					    (&link->state_object, state, MDL);
+				    dhcp_failover_state_reference(&link->state_object, state, MDL);
 			    if (!link->peer_address)
-				    option_cache_reference
-					    (&link->peer_address,
+				    option_cache_reference(&link->peer_address,
 					     state->partner.address, MDL);
 			}
 
@@ -736,7 +734,7 @@ isc_result_t dhcp_failover_link_signal
 Func Name :   do_a_failover_option
 Date Created: 2018/07/09
 Author:  	  wangzhe
-Description:  从网络提取failover选项
+Description:  从报文提取failover选项
 Input:	      
 Output:       
 Return:       isc_result_t
