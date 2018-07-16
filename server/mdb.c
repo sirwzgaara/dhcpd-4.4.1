@@ -3941,34 +3941,35 @@ void free_everything(void)
 
 	/* Get rid of all the hash tables. */
 	if (host_hw_addr_hash)
-		host_free_hash_table (&host_hw_addr_hash, MDL);
+		host_free_hash_table(&host_hw_addr_hash, MDL);
 	host_hw_addr_hash = 0;
 	
 	if (host_uid_hash)
-		host_free_hash_table (&host_uid_hash, MDL);
+		host_free_hash_table(&host_uid_hash, MDL);
 	host_uid_hash = 0;
 	
 	if (lease_uid_hash)
-		lease_id_free_hash_table (&lease_uid_hash, MDL);
+		lease_id_free_hash_table(&lease_uid_hash, MDL);
 	lease_uid_hash = 0;
 	
 	if (lease_ip_addr_hash)
-		lease_ip_free_hash_table (&lease_ip_addr_hash, MDL);
+		lease_ip_free_hash_table(&lease_ip_addr_hash, MDL);
 	lease_ip_addr_hash = 0;
 	
 	if (lease_hw_addr_hash)
-		lease_id_free_hash_table (&lease_hw_addr_hash, MDL);
+		lease_id_free_hash_table(&lease_hw_addr_hash, MDL);
 	lease_hw_addr_hash = 0;
 	
 	if (host_name_hash)
-		host_free_hash_table (&host_name_hash, MDL);
+		host_free_hash_table(&host_name_hash, MDL);
 	host_name_hash = 0;
 	
 	if (dns_zone_hash)
-		dns_zone_free_hash_table (&dns_zone_hash, MDL);
+		dns_zone_free_hash_table(&dns_zone_hash, MDL);
 	dns_zone_hash = 0;
 
-	while (host_id_info != NULL) {
+	while (host_id_info != NULL) 
+	{
 		host_id_info_t *tmp;
 		option_dereference(&host_id_info->option, MDL);
 		host_free_hash_table(&host_id_info->values_hash, MDL);
@@ -3982,86 +3983,104 @@ void free_everything(void)
 #endif
 	auth_key_hash = 0;
 
-	omapi_object_dereference ((omapi_object_t **)&dhcp_control_object,
-				  MDL);
+	omapi_object_dereference((omapi_object_t **)&dhcp_control_object, MDL);
 
-	for (lp = collections; lp; lp = lp -> next) {
-	    if (lp -> classes) {
-		class_reference (&cn, lp -> classes, MDL);
-		do {
-		    if (cn) {
-			class_reference (&cc, cn, MDL);
-			class_dereference (&cn, MDL);
-		    }
-		    if (cc -> nic) {
-			class_reference (&cn, cc -> nic, MDL);
-			class_dereference (&cc -> nic, MDL);
-		    }
-		    group_dereference (&cc -> group, MDL);
-		    if (cc -> hash) {
-			    class_free_hash_table (&cc -> hash, MDL);
-			    cc -> hash = (struct hash_table *)0;
-		    }
-		    class_dereference (&cc, MDL);
-		} while (cn);
-		class_dereference (&lp -> classes, MDL);
+	for (lp = collections; lp; lp = lp->next) 
+	{
+	    if (lp->classes) 
+		{
+			class_reference(&cn, lp->classes, MDL);
+			do {
+			    if (cn) 
+				{
+					class_reference(&cc, cn, MDL);
+					class_dereference(&cn, MDL);
+			    }
+			    if (cc->nic) 
+				{
+					class_reference(&cn, cc->nic, MDL);
+					class_dereference(&cc->nic, MDL);
+			    }
+			    group_dereference(&cc->group, MDL);
+			    if (cc->hash) 
+				{
+				    class_free_hash_table(&cc->hash, MDL);
+				    cc->hash = (struct hash_table *)0;
+			    }
+			    class_dereference(&cc, MDL);
+			} while (cn);
+			
+			class_dereference (&lp->classes, MDL);
 	    }
 	}
 
-	if (interface_vector) {
-	    for (i = 0; i < interface_count; i++) {
-		if (interface_vector [i])
-		    interface_dereference (&interface_vector [i], MDL);
+	if (interface_vector) 
+	{
+	    for (i = 0; i < interface_count; i++) 
+		{
+			if (interface_vector[i])
+			    interface_dereference(&interface_vector[i], MDL);
 	    }
-	    dfree (interface_vector, MDL);
+	    dfree(interface_vector, MDL);
 	    interface_vector = 0;
 	}
 
-	if (interfaces) {
-	    interface_reference (&in, interfaces, MDL);
+	if (interfaces) 
+	{
+	    interface_reference(&in, interfaces, MDL);
 	    do {
-		if (in) {
-		    interface_reference (&ic, in, MDL);
-		    interface_dereference (&in, MDL);
-		}
-		if (ic -> next) {
-		    interface_reference (&in, ic -> next, MDL);
-		    interface_dereference (&ic -> next, MDL);
-		}
-		omapi_unregister_io_object ((omapi_object_t *)ic);
-		if (ic -> shared_network) {
-		    if (ic -> shared_network -> interface)
-			interface_dereference
-				(&ic -> shared_network -> interface, MDL);
-		    shared_network_dereference (&ic -> shared_network, MDL);
-		}
-		interface_dereference (&ic, MDL);
+			if (in) 
+			{
+			    interface_reference(&ic, in, MDL);
+			    interface_dereference(&in, MDL);
+			}
+			
+			if (ic->next) 
+			{
+			    interface_reference(&in, ic->next, MDL);
+			    interface_dereference(&ic->next, MDL);
+			}
+			
+			omapi_unregister_io_object((omapi_object_t *)ic);
+			if (ic->shared_network) 
+			{
+			    if (ic->shared_network->interface)
+				interface_dereference(&ic->shared_network->interface, MDL);
+			    shared_network_dereference(&ic->shared_network, MDL);
+			}
+			
+			interface_dereference(&ic, MDL);
 	    } while (in);
-	    interface_dereference (&interfaces, MDL);
+	    interface_dereference(&interfaces, MDL);
 	}
 
 	/* Subnets are complicated because of the extra links. */
-	if (subnets) {
-	    subnet_reference (&sn, subnets, MDL);
+	if (subnets) 
+	{
+	    subnet_reference(&sn, subnets, MDL);
 	    do {
-		if (sn) {
-		    subnet_reference (&sc, sn, MDL);
-		    subnet_dereference (&sn, MDL);
-		}
-		if (sc -> next_subnet) {
-		    subnet_reference (&sn, sc -> next_subnet, MDL);
-		    subnet_dereference (&sc -> next_subnet, MDL);
-		}
-		if (sc -> next_sibling)
-		    subnet_dereference (&sc -> next_sibling, MDL);
-		if (sc -> shared_network)
-		    shared_network_dereference (&sc -> shared_network, MDL);
-		group_dereference (&sc -> group, MDL);
-		if (sc -> interface)
-		    interface_dereference (&sc -> interface, MDL);
-		subnet_dereference (&sc, MDL);
+			if (sn) 
+			{
+			    subnet_reference(&sc, sn, MDL);
+			    subnet_dereference(&sn, MDL);
+			}
+			
+			if (sc->next_subnet) 
+			{
+			    subnet_reference(&sn, sc->next_subnet, MDL);
+			    subnet_dereference(&sc->next_subnet, MDL);
+			}
+			
+			if (sc->next_sibling)
+			    subnet_dereference(&sc->next_sibling, MDL);
+			if (sc->shared_network)
+			    shared_network_dereference(&sc->shared_network, MDL);
+			group_dereference(&sc->group, MDL);
+			if (sc->interface)
+			    interface_dereference(&sc->interface, MDL);
+			subnet_dereference(&sc, MDL);
 	    } while (sn);
-	    subnet_dereference (&subnets, MDL);
+	    subnet_dereference(&subnets, MDL);
 	}
 
 	/* So are shared networks. */
@@ -4070,127 +4089,138 @@ void free_everything(void)
 	 * It would be good to fix this, but it is not a "real bug," so not
 	 * today.  This hack is incomplete, it doesn't trim out sub-values.
 	 */
-	if (shared_networks) {
+	if (shared_networks) 
+	{
 		shared_network_dereference (&shared_networks, MDL);
 	/* This is the old method (tries to free memory twice, broken) */
-	} else if (0) {
-	    shared_network_reference (&nn, shared_networks, MDL);
+	} 
+	else if (0) 
+	{
+	    shared_network_reference(&nn, shared_networks, MDL);
 	    do {
-		if (nn) {
-		    shared_network_reference (&nc, nn, MDL);
-		    shared_network_dereference (&nn, MDL);
-		}
-		if (nc -> next) {
-		    shared_network_reference (&nn, nc -> next, MDL);
-		    shared_network_dereference (&nc -> next, MDL);
-		}
-
-		/* As are pools. */
-		if (nc -> pools) {
-		    pool_reference (&pn, nc -> pools, MDL);
-		    do {
-			LEASE_STRUCT_PTR lptr[RESERVED_LEASES+1];
-
-			if (pn) {
-			    pool_reference (&pc, pn, MDL);
-			    pool_dereference (&pn, MDL);
+			if (nn) 
+			{
+			    shared_network_reference(&nc, nn, MDL);
+			    shared_network_dereference(&nn, MDL);
 			}
-			if (pc -> next) {
-			    pool_reference (&pn, pc -> next, MDL);
-			    pool_dereference (&pc -> next, MDL);
+			
+			if(nc->next) 
+			{
+			    shared_network_reference(&nn, nc->next, MDL);
+			    shared_network_dereference(&nc->next, MDL);
 			}
 
-			lptr [FREE_LEASES] = &pc -> free;
-			lptr [ACTIVE_LEASES] = &pc -> active;
-			lptr [EXPIRED_LEASES] = &pc -> expired;
-			lptr [ABANDONED_LEASES] = &pc -> abandoned;
-			lptr [BACKUP_LEASES] = &pc -> backup;
-			lptr [RESERVED_LEASES] = &pc->reserved;
+			/* As are pools. */
+			if (nc->pools) 
+			{
+			    pool_reference(&pn, nc->pools, MDL);
+			    do {
+					LEASE_STRUCT_PTR lptr[RESERVED_LEASES + 1];
 
-			/* As (sigh) are leases. */
-			for (i = FREE_LEASES ; i <= RESERVED_LEASES ; i++) {
-			    if (LEASE_NOT_EMPTYP(lptr[i])) {
-			        lease_reference(&ln, LEASE_GET_FIRSTP(lptr[i]), MDL);
-				do {
-				    /* save a pointer to the current lease */
-				    lease_reference (&lc, ln, MDL);
-				    lease_dereference (&ln, MDL);
+					if (pn) 
+					{
+					    pool_reference(&pc, pn, MDL);
+					    pool_dereference(&pn, MDL);
+					}
+					
+					if (pc->next) 
+					{
+					    pool_reference(&pn, pc->next, MDL);
+					    pool_dereference(&pc->next, MDL);
+					}
 
-				    /* get the next lease if there is one */
-				    ltemp = LEASE_GET_NEXTP(lptr[i], lc);
-				    if (ltemp != NULL) {
-					lease_reference(&ln, ltemp, MDL);
-				    }
+					lptr[FREE_LEASES] 	   = &pc->free;
+					lptr[ACTIVE_LEASES]    = &pc->active;
+					lptr[EXPIRED_LEASES]   = &pc->expired;
+					lptr[ABANDONED_LEASES] = &pc->abandoned;
+					lptr[BACKUP_LEASES]    = &pc->backup;
+					lptr[RESERVED_LEASES]  = &pc->reserved;
 
-				    /* remove the current lease from the queue */
-				    LEASE_REMOVEP(lptr[i], lc);
+					/* As (sigh) are leases. */
+					for (i = FREE_LEASES ; i <= RESERVED_LEASES ; i++) 
+					{
+						if (LEASE_NOT_EMPTYP(lptr[i])) 
+						{
+					        lease_reference(&ln, LEASE_GET_FIRSTP(lptr[i]), MDL);
+							do {
+							    /* save a pointer to the current lease */
+							    lease_reference(&lc, ln, MDL);
+							    lease_dereference(&ln, MDL);
 
-				    if (lc -> billing_class)
-				       class_dereference (&lc -> billing_class,
-							  MDL);
-				    if (lc -> state)
-					free_lease_state (lc -> state, MDL);
-				    lc -> state = (struct lease_state *)0;
-				    if (lc -> n_hw)
-					lease_dereference (&lc -> n_hw, MDL);
-				    if (lc -> n_uid)
-					lease_dereference (&lc -> n_uid, MDL);
-				    lease_dereference (&lc, MDL);
-				} while (ln);
-			    }
+							    /* get the next lease if there is one */
+							    ltemp = LEASE_GET_NEXTP(lptr[i], lc);
+							    if (ltemp != NULL) 
+								{
+									lease_reference(&ln, ltemp, MDL);
+							    }
+
+							    /* remove the current lease from the queue */
+							    LEASE_REMOVEP(lptr[i], lc);
+
+							    if (lc->billing_class)
+							       class_dereference(&lc->billing_class,
+										  MDL);
+							    if (lc->state)
+								free_lease_state(lc->state, MDL);
+							    lc->state = (struct lease_state *)0;
+							    if (lc->n_hw)
+									lease_dereference(&lc->n_hw, MDL);
+							    if (lc->n_uid)
+									lease_dereference(&lc->n_uid, MDL);
+								
+							    lease_dereference (&lc, MDL);
+							} while (ln);
+					    }
+					}
+					if (pc->group)
+					    group_dereference(&pc->group, MDL);
+					if (pc->shared_network)
+					    shared_network_dereference(&pc->shared_network, MDL);
+					pool_dereference(&pc, MDL);
+			    } while (pn);
+			    pool_dereference(&nc->pools, MDL);
 			}
-			if (pc -> group)
-			    group_dereference (&pc -> group, MDL);
-			if (pc -> shared_network)
-			    shared_network_dereference (&pc -> shared_network,
-							MDL);
-			pool_dereference (&pc, MDL);
-		    } while (pn);
-		    pool_dereference (&nc -> pools, MDL);
-		}
-		/* Because of a circular reference, we need to nuke this
-		   manually. */
-		group_dereference (&nc -> group, MDL);
-		shared_network_dereference (&nc, MDL);
+			/* Because of a circular reference, we need to nuke this
+			   manually. */
+			group_dereference(&nc->group, MDL);
+			shared_network_dereference(&nc, MDL);
 	    } while (nn);
-	    shared_network_dereference (&shared_networks, MDL);
+	    shared_network_dereference(&shared_networks, MDL);
 	}
 
-	cancel_all_timeouts ();
-	relinquish_timeouts ();
+	cancel_all_timeouts();
+	relinquish_timeouts();
 #if defined(DELAYED_ACK)
 	relinquish_ackqueue();
 #endif
-	trace_free_all ();
-	group_dereference (&root_group, MDL);
-	executable_statement_dereference (&default_classification_rules, MDL);
+	trace_free_all();
+	group_dereference(&root_group, MDL);
+	executable_statement_dereference(&default_classification_rules, MDL);
 
 	shutdown_state = shutdown_drop_omapi_connections;
-	omapi_io_state_foreach (dhcp_io_shutdown, 0);
+	omapi_io_state_foreach(dhcp_io_shutdown, 0);
 	shutdown_state = shutdown_listeners;
-	omapi_io_state_foreach (dhcp_io_shutdown, 0);
+	omapi_io_state_foreach(dhcp_io_shutdown, 0);
 	shutdown_state = shutdown_dhcp;
-	omapi_io_state_foreach (dhcp_io_shutdown, 0);
+	omapi_io_state_foreach(dhcp_io_shutdown, 0);
 
-	omapi_object_dereference ((omapi_object_t **)&icmp_state, MDL);
+	omapi_object_dereference((omapi_object_t **)&icmp_state, MDL);
 
 	universe_free_hash_table (&universe_hash, MDL);
-	for (i = 0; i < universe_count; i++) {
+	for (i = 0; i < universe_count; i++) 
+	{
 #if 0
 		union {
 			const char *c;
 			char *s;
 		} foo;
 #endif
-		if (universes [i]) {
+		if (universes [i]) 
+		{
 			if (universes[i]->name_hash)
-			    option_name_free_hash_table(
-						&universes[i]->name_hash,
-						MDL);
+			    option_name_free_hash_table(&universes[i]->name_hash, MDL);
 			if (universes[i]->code_hash)
-			    option_code_free_hash_table(
-						&universes[i]->code_hash,
-						MDL);
+			    option_code_free_hash_table(&universes[i]->code_hash, MDL);
 #if 0
 			if (universes [i] -> name > (char *)&end) {
 				foo.c = universes [i] -> name;
@@ -4201,18 +4231,18 @@ void free_everything(void)
 #endif
 		}
 	}
-	dfree (universes, MDL);
+	dfree(universes, MDL);
 
-	relinquish_free_lease_states ();
-	relinquish_free_pairs ();
-	relinquish_free_expressions ();
-	relinquish_free_binding_values ();
-	relinquish_free_option_caches ();
-	relinquish_free_packets ();
+	relinquish_free_lease_states();
+	relinquish_free_pairs();
+	relinquish_free_expressions();
+	relinquish_free_binding_values();
+	relinquish_free_option_caches();
+	relinquish_free_packets();
 #if defined(COMPACT_LEASES)
-	relinquish_lease_hunks ();
+	relinquish_lease_hunks();
 #endif
-	relinquish_hash_bucket_hunks ();
-	omapi_type_relinquish ();
+	relinquish_hash_bucket_hunks();
+	omapi_type_relinquish();
 }
 #endif /* DEBUG_MEMORY_LEAKAGE_ON_EXIT */
