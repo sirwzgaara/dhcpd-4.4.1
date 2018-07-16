@@ -116,17 +116,19 @@ trigger_event(struct eventqueue **queue)
  * 1 is delete, 0 is leave in place
  */
 #define SOCKDELETE 1
-int
-omapi_iscsock_cb(isc_task_t   *task,
-		 isc_socket_t *socket,
-		 void         *cbarg,
-		 int           flags)
+int omapi_iscsock_cb
+(
+	isc_task_t   *task,
+	isc_socket_t *socket,
+	void 		 *cbarg,
+	int           flags
+)
 {
 	omapi_io_object_t *obj;
 	isc_result_t status;
 
 	/* Get the current time... */
-	gettimeofday (&cur_tv, (struct timezone *)0);
+	gettimeofday(&cur_tv, (struct timezone *)0);
 
 	/* isc socket stuff */
 #if SOCKDELETE
@@ -134,17 +136,20 @@ omapi_iscsock_cb(isc_task_t   *task,
 	 * walk through the io states list, if our object is on there
 	 * service it.  if not ignore it.
 	 */
-	for (obj = omapi_io_states.next; obj != NULL; obj = obj->next) {
+	for (obj = omapi_io_states.next; obj != NULL; obj = obj->next) 
+	{
 		if (obj == cbarg)
 			break;
 	}
 
-	if (obj == NULL) {
+	if (obj == NULL) 
+	{
 		return(0);
 	}
 #else
 	/* Not much to be done if we have the wrong type of object. */
-	if (((omapi_object_t *)cbarg) -> type != omapi_type_io_object) {
+	if (((omapi_object_t *)cbarg)->type != omapi_type_io_object) 
+	{
 		log_fatal ("Incorrect object type, must be of type io_object");
 	}
 	obj = (omapi_io_object_t *)cbarg;
@@ -156,14 +161,15 @@ omapi_iscsock_cb(isc_task_t   *task,
 	 * This should be a temporary fix until we arrange to properly
 	 * close the socket.
 	 */
-	if (obj->closed == ISC_TRUE) {
+	if (obj->closed == ISC_TRUE) 
+	{
 		return(0);
 	}
 #endif	  
 
 	if ((flags == ISC_SOCKFDWATCH_READ) &&
-	    (obj->reader != NULL) &&
-	    (obj->inner != NULL)) {
+	    (obj->reader != NULL) && (obj->inner != NULL)) 
+	{
 		status = obj->reader(obj->inner);
 		/* 
 		 * If we are shutting down (basically tried to
@@ -174,9 +180,10 @@ omapi_iscsock_cb(isc_task_t   *task,
 			return (0);
 		/* Otherwise We always ask for more when reading */
 		return (1);
-	} else if ((flags == ISC_SOCKFDWATCH_WRITE) &&
-		 (obj->writer != NULL) &&
-		 (obj->inner != NULL)) {
+	} 
+	else if ((flags == ISC_SOCKFDWATCH_WRITE) &&
+		 (obj->writer != NULL) && (obj->inner != NULL)) 
+	{
 		status = obj->writer(obj->inner);
 		/* If the writer has more to write they should return
 		 * ISC_R_INPROGRESS */
@@ -235,8 +242,9 @@ isc_result_t omapi_register_io_object
 	
 	obj->closed = ISC_FALSE;  /* mark as open */
 
+	/* connection->outer = omapi_io, omapi_io->inner = connection */
 	status = omapi_object_reference(&obj->inner, h, MDL);
-	if (status != ISC_R_SUCCESS) 
+	if (status != ISC_R_SUCCESS)
 	{
 		omapi_io_dereference(&obj, MDL);
 		return status;
@@ -301,6 +309,7 @@ isc_result_t omapi_register_io_object
 	obj->reaper  = reaper;
 
 	omapi_io_dereference(&obj, MDL);
+	
 	return ISC_R_SUCCESS;
 }
 
@@ -847,12 +856,12 @@ isc_result_t omapi_io_destroy (omapi_object_t *h, const char *file, int line)
 isc_result_t omapi_io_signal_handler (omapi_object_t *h,
 				      const char *name, va_list ap)
 {
-	if (h -> type != omapi_type_io_object)
+	if (h->type != omapi_type_io_object)
 		return DHCP_R_INVALIDARG;
 	
-	if (h -> inner && h -> inner -> type -> signal_handler)
-		return (*(h -> inner -> type -> signal_handler)) (h -> inner,
-								  name, ap);
+	if (h->inner && h->inner->type->signal_handler)
+		return (*(h->inner->type->signal_handler))(h->inner, name, ap);
+	
 	return ISC_R_NOTFOUND;
 }
 

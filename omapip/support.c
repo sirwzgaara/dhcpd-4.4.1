@@ -271,14 +271,14 @@ isc_result_t omapi_signal (omapi_object_t *handle, const char *name, ...)
 	isc_result_t status;
 
 	va_start (ap, name);
-	for (outer = handle; outer -> outer; outer = outer -> outer)
+	for (outer = handle; outer->outer; outer = outer->outer)
 		;
-	if (outer -> type -> signal_handler)
-		status = (*(outer -> type -> signal_handler)) (outer,
-							       name, ap);
+	if (outer->type->signal_handler)
+		status = (*(outer->type->signal_handler))(outer, name, ap);
 	else
 		status = ISC_R_NOTFOUND;
-	va_end (ap);
+	
+	va_end(ap);
 	return status;
 }
 

@@ -682,6 +682,7 @@ static isc_result_t omapi_connection_connect_internal(omapi_object_t *h)
 	
 	if (c->state == omapi_connection_connecting || c->state == omapi_connection_unconnected) 
 	{
+		/* 若已经连接的个数比需要连接的个数多，是bug */
 		if (c->cptr >= c->connect_list->count) 
 		{
 			switch (error) 
@@ -1113,16 +1114,16 @@ isc_result_t omapi_connection_destroy (omapi_object_t *h,
 isc_result_t omapi_connection_signal_handler (omapi_object_t *h,
 					      const char *name, va_list ap)
 {
-	if (h -> type != omapi_type_connection)
+	if (h->type != omapi_type_connection)
 		return DHCP_R_INVALIDARG;
 
 #ifdef DEBUG_PROTOCOL
 	log_debug ("omapi_connection_signal_handler(%s)", name);
 #endif
 	
-	if (h -> inner && h -> inner -> type -> signal_handler)
-		return (*(h -> inner -> type -> signal_handler)) (h -> inner,
-								  name, ap);
+	if (h->inner && h->inner->type->signal_handler)
+		return (*(h->inner->type->signal_handler))(h->inner, name, ap);
+	
 	return ISC_R_NOTFOUND;
 }
 

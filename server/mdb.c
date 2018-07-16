@@ -536,9 +536,9 @@ isc_result_t enter_host
 
 	if (dynamicp && commit) 
 	{
-		if (!write_host (hd))
+		if (!write_host(hd))
 			return ISC_R_IOERROR;
-		if (!commit_leases ())
+		if (!commit_leases())
 			return ISC_R_IOERROR;
 	}
 
