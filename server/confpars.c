@@ -1436,7 +1436,8 @@ void parse_failover_state_declaration
 	dhcp_failover_state_t *state;
 	dhcp_failover_config_t *cp;
 
-	if (!peer) {
+	if (!peer) 
+	{
 		token = next_token (&val, (unsigned *)0, cfile);
 		if (token != PEER) {
 			parse_warn (cfile, "expecting \"peer\"");
@@ -2027,16 +2028,16 @@ void parse_pool_statement
 				break;
 			}
 			if (pool->failover_peer)
-				dhcp_failover_state_dereference
-					(&pool->failover_peer, MDL);
+				dhcp_failover_state_dereference(&pool->failover_peer, MDL);
+			
 			status = find_failover_peer(&pool->failover_peer, val, MDL);
 			if (status != ISC_R_SUCCESS)
-				parse_warn(cfile,
-					   "failover peer %s: %s", val,
+				parse_warn(cfile, "failover peer %s: %s", val,
 					   isc_result_totext (status));
 			else
 				pool->failover_peer->pool_count++;
-			parse_semi(cfile);
+			
+			parse_semi(cfile);		
 			break;
 #endif
 

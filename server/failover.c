@@ -203,7 +203,7 @@ isc_result_t enter_failover_peer
 Func Name :   find_failover_peer
 Date Created: 2018/07/09
 Author:  	  wangzhe
-Description:  用name在failover_states全局链表中查找一个state
+Description:  查找一个state对象，若找到了，挂接指针
 Input:	      
 Output:       
 Return:       isc_result_t
@@ -381,7 +381,7 @@ isc_result_t dhcp_failover_link_signal
 	struct timeval tv;
 
 	/* 必须传入link对象 */
-	if (h->type != dhcp_type_failover_link) 
+	if (h->type != dhcp_type_failover_link)
 	{
 		/* XXX shouldn't happen.   Put an assert here? */
 		return ISC_R_UNEXPECTED;

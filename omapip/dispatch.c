@@ -287,8 +287,7 @@ isc_result_t omapi_register_io_object
 	}
 
 	/* Find the last I/O state, if there are any. */
-	for (p = omapi_io_states.next;
-	     p && p->next; p = p->next)
+	for (p = omapi_io_states.next; p && p->next; p = p->next)
 		;
 	if (p)
 		omapi_io_reference(&p->next, obj, MDL);
@@ -312,7 +311,6 @@ isc_result_t omapi_register_io_object
  * repoke the fd code to make it happy.  Neither the objects nor the
  * fd are allowed to have changed.
  */
-
 isc_result_t omapi_reregister_io_object (omapi_object_t *h,
 					 int (*readfd) (omapi_object_t *),
 					 int (*writefd) (omapi_object_t *),
@@ -326,14 +324,15 @@ isc_result_t omapi_reregister_io_object (omapi_object_t *h,
 	omapi_io_object_t *obj;
 	int fd_flags = 0;
 
-	if ((!h -> outer) || (h -> outer -> type != omapi_type_io_object)) {
+	if ((!h->outer) || (h->outer->type != omapi_type_io_object)) 
+	{
 		/*
 		 * If we don't have an object or if the type isn't what 
 		 * we expect do the normal registration (which will overwrite
 		 * an incorrect type, that's what we did historically, may
 		 * want to change that)
 		 */
-		return (omapi_register_io_object (h, readfd, writefd,
+		return (omapi_register_io_object(h, readfd, writefd,
 						  reader, writer, reaper));
 	}
 
@@ -344,11 +343,11 @@ isc_result_t omapi_reregister_io_object (omapi_object_t *h,
 
 	obj = (omapi_io_object_t *)h->outer;
 
-	obj->readfd = readfd;
+	obj->readfd  = readfd;
 	obj->writefd = writefd;
-	obj->reader = reader;
-	obj->writer = writer;
-	obj->reaper = reaper;
+	obj->reader  = reader;
+	obj->writer  = writer;
+	obj->reaper  = reaper;
 
 	if (readfd) {
 		fd_flags |= ISC_SOCKFDWATCH_READ;

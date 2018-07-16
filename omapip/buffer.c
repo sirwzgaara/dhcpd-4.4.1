@@ -147,13 +147,12 @@ static isc_result_t omapi_connection_reader_trace (omapi_object_t *h,
 	omapi_connection_object_t *c;
 	unsigned bytes_to_read;
 	
-	if (!h || h -> type != omapi_type_connection)
+	if (!h || h->type != omapi_type_connection)
 		return DHCP_R_INVALIDARG;
 	c = (omapi_connection_object_t *)h;
 
 	/* See if there are enough bytes. */
-	if (c -> in_bytes >= OMAPI_BUF_SIZE - 1 &&
-	    c -> in_bytes > c -> bytes_needed)
+	if (c->in_bytes >= OMAPI_BUF_SIZE - 1 && c->in_bytes > c->bytes_needed)
 		return ISC_R_SUCCESS;
 
 

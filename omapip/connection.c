@@ -102,7 +102,7 @@ isc_result_t omapi_connect (omapi_object_t *c,
 Func Name :   omapi_connect_list
 Date Created: 2018/07/10
 Author:  	  wangzhe
-Description:  和所有failover对端建立连接
+Description:  和failover对端建立连接
 Input:	      
 Output:       
 Return:       isc_result_t
@@ -121,11 +121,11 @@ isc_result_t omapi_connect_list
 	struct sockaddr_in local_sin;
 
 	obj = (omapi_connection_object_t *)0;
-	status = omapi_connection_allocate (&obj, MDL);
+	status = omapi_connection_allocate(&obj, MDL);
 	if (status != ISC_R_SUCCESS)
 		return status;
 
-	/* listener->inner = connection, connection->outer = listener */
+	/* link->outer = connection, connection->inner = link */
 	status = omapi_object_reference(&c->outer, (omapi_object_t *)obj, MDL);
 	if (status != ISC_R_SUCCESS) 
 	{
@@ -174,13 +174,14 @@ isc_result_t omapi_connect_list
 			
 			local_sin.sin_port = htons(local_addr->port);
 			memcpy(&local_sin.sin_addr, local_addr->address, local_addr->addrlen);
+			
 #if defined (HAVE_SA_LEN)
 			local_sin.sin_len = sizeof local_addr;
 #endif
 			local_sin.sin_family = AF_INET;
-			memset(&local_sin.sin_zero, 0, sizeof local_sin.sin_zero);
+			memset(&local_sin.sin_zero, 0, sizeof(local_sin.sin_zero));
 			
-			if (bind(obj->socket, (struct sockaddr *)&local_sin, sizeof local_sin) < 0) 
+			if (bind(obj->socket, (struct sockaddr *)&local_sin, sizeof(local_sin)) < 0) 
 			{
 				omapi_connection_object_t **objp = &obj;
 				omapi_object_t **o = (omapi_object_t **)objp;
@@ -209,7 +210,7 @@ isc_result_t omapi_connect_list
 		/* Set the SO_REUSEADDR flag (this should not fail). */
 		flag = 1;
 		if (setsockopt(obj->socket, SOL_SOCKET, SO_REUSEADDR,
-				(char *)&flag, sizeof flag) < 0) 
+				(char *)&flag, sizeof(flag)) < 0) 
 		{
 			omapi_connection_dereference(&obj, MDL);
 			return ISC_R_UNEXPECTED;
@@ -218,7 +219,7 @@ isc_result_t omapi_connect_list
 		/* Set the file to nonblocking mode. */
 		if (fcntl(obj->socket, F_SETFL, O_NONBLOCK) < 0) 
 		{
-			omapi_connection_dereference (&obj, MDL);
+			omapi_connection_dereference(&obj, MDL);
 			return ISC_R_UNEXPECTED;
 		}
 
@@ -613,9 +614,12 @@ int omapi_connection_readfd (omapi_object_t *h)
 int omapi_connection_writefd (omapi_object_t *h)
 {
 	omapi_connection_object_t *c;
-	if (h -> type != omapi_type_connection)
+	
+	if (h->type != omapi_type_connection)
 		return -1;
+	
 	c = (omapi_connection_object_t *)h;
+	
 	return c->socket;
 }
 
@@ -641,31 +645,47 @@ isc_result_t omapi_connection_connect (omapi_object_t *h)
 	return ISC_R_SUCCESS;
 }
 
-static isc_result_t omapi_connection_connect_internal (omapi_object_t *h)
+/*********************************************************************
+Func Name :   omapi_connection_connect_internal
+Date Created: 2018/07/16
+Author:  	  wangzhe
+Description:  建立一个tcp连接，failover和peer建立tcp连接时使用
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution : 
+*********************************************************************/
+static isc_result_t omapi_connection_connect_internal(omapi_object_t *h)
 {
 	int error = 0;
 	omapi_connection_object_t *c;
 	socklen_t sl;
 	isc_result_t status;
 
-	if (h -> type != omapi_type_connection)
+	if (h->type != omapi_type_connection)
 		return DHCP_R_INVALIDARG;
+	
 	c = (omapi_connection_object_t *)h;
 
-	if (c -> state == omapi_connection_connecting) {
-		sl = sizeof error;
-		if (getsockopt (c -> socket, SOL_SOCKET, SO_ERROR,
-				(char *)&error, &sl) < 0) {
-			omapi_disconnect (h, 1);
+	if (c->state == omapi_connection_connecting) 
+	{
+		sl = sizeof(error);
+		if (getsockopt(c->socket, SOL_SOCKET, SO_ERROR, (char *)&error, &sl) < 0) 
+		{
+			omapi_disconnect(h, 1);
 			return ISC_R_SUCCESS;
 		}
+		
 		if (!error)
-			c -> state = omapi_connection_connected;
+			c->state = omapi_connection_connected;
 	}
-	if (c -> state == omapi_connection_connecting ||
-	    c -> state == omapi_connection_unconnected) {
-		if (c -> cptr >= c -> connect_list -> count) {
-			switch (error) {
+	
+	if (c->state == omapi_connection_connecting || c->state == omapi_connection_unconnected) 
+	{
+		if (c->cptr >= c->connect_list->count) 
+		{
+			switch (error) 
+			{
 			      case ECONNREFUSED:
 				status = ISC_R_CONNREFUSED;
 				break;
@@ -676,33 +696,32 @@ static isc_result_t omapi_connection_connect_internal (omapi_object_t *h)
 				status = uerr2isc (error);
 				break;
 			}
-			omapi_disconnect (h, 1);
+			omapi_disconnect(h, 1);
 			return status;
 		}
 
-		if (c -> connect_list -> addresses [c -> cptr].addrtype !=
-		    AF_INET) {
-			omapi_disconnect (h, 1);
+		/* 取一个待连接的，应该是V4 */
+		if (c->connect_list->addresses[c->cptr].addrtype != AF_INET) 
+		{
+			omapi_disconnect(h, 1);
 			return DHCP_R_INVALIDARG;
 		}
 
-		memcpy (&c -> remote_addr.sin_addr,
-			&c -> connect_list -> addresses [c -> cptr].address,
-			sizeof c -> remote_addr.sin_addr);
-		c -> remote_addr.sin_family = AF_INET;
-		c -> remote_addr.sin_port =
-		       htons (c -> connect_list -> addresses [c -> cptr].port);
+		memcpy(&c->remote_addr.sin_addr, &c->connect_list->addresses[c->cptr].address,
+			sizeof(c->remote_addr.sin_addr));
+		c->remote_addr.sin_family = AF_INET;
+		c->remote_addr.sin_port = htons(c->connect_list->addresses[c->cptr].port);
+		
 #if defined (HAVE_SA_LEN)
 		c -> remote_addr.sin_len = sizeof c -> remote_addr;
 #endif
-		memset (&c -> remote_addr.sin_zero, 0,
-			sizeof c -> remote_addr.sin_zero);
-		++c -> cptr;
 
-		error = connect (c -> socket,
-				 (struct sockaddr *)&c -> remote_addr,
-				 sizeof c -> remote_addr);
-		if (error < 0) {
+		memset(&c->remote_addr.sin_zero, 0, sizeof(c->remote_addr.sin_zero));
+		++c->cptr;
+
+		error = connect(c->socket, (struct sockaddr *)&c->remote_addr, sizeof(c->remote_addr));
+		if (error < 0) 
+		{
 			error = errno;
 			if (error != EINPROGRESS) {
 				omapi_disconnect (h, 1);
@@ -722,20 +741,20 @@ static isc_result_t omapi_connection_connect_internal (omapi_object_t *h)
 			c -> state = omapi_connection_connecting;
 			return DHCP_R_INCOMPLETE;
 		}
-		c -> state = omapi_connection_connected;
+		c->state = omapi_connection_connected;
 	}
 	
 	/* I don't know why this would fail, so I'm tempted not to test
 	   the return value. */
-	sl = sizeof (c -> local_addr);
-	if (getsockname (c -> socket,
-			 (struct sockaddr *)&c -> local_addr, &sl) < 0) {
+	sl = sizeof(c->local_addr);
+	if (getsockname(c->socket, (struct sockaddr *)&c->local_addr, &sl) < 0) 
+	{
 	}
 
 	/* Reregister with the I/O object.  If we don't already have an
 	   I/O object this turns into a register call, otherwise we simply
 	   modify the pointers in the I/O object. */
-
+	/* unconnected的时候只能写，建立连接之后就可以读了，重新挂接omapi_io对象的函数 */
 	status = omapi_reregister_io_object (h,
 					     omapi_connection_readfd,
 					     omapi_connection_writefd,
