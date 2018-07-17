@@ -32,18 +32,18 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-int execute_statements (result, packet, lease, client_state,
-			in_options, out_options, scope, statements,
-			on_star)
-	struct binding_value **result;
-	struct packet *packet;
-	struct lease *lease;
-	struct client_state *client_state;
-	struct option_state *in_options;
-	struct option_state *out_options;
-	struct binding_scope **scope;
-	struct executable_statement *statements;
-	struct on_star *on_star;
+int execute_statements
+(
+	struct binding_value **result,
+	struct packet *packet,
+	struct lease *lease,
+	struct client_state *client_state,
+	struct option_state *in_options,
+	struct option_state *out_options,
+	struct binding_scope **scope,
+	struct executable_statement *statements,
+	struct on_star *on_star
+)
 {
 	struct executable_statement *r, *e, *next;
 	int rc;

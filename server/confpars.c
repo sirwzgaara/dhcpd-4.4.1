@@ -2442,11 +2442,13 @@ void parse_host_declaration
 /* class-declaration :== STRING LBRACE parameters declarations RBRACE
 */
 
-int parse_class_declaration (cp, cfile, group, type)
-	struct class **cp;
-	struct parse *cfile;
-	struct group *group;
-	int type;
+int parse_class_declaration
+(
+	struct class **cp,
+	struct parse *cfile,
+	struct group *group,
+	int type
+)
 {
 	const char *val;
 	enum dhcp_token token;
@@ -2471,7 +2473,7 @@ int parse_class_declaration (cp, cfile, group, type)
 	}
 
 	/* See if there's already a class with the specified name. */
-	find_class (&pc, val, MDL);
+	find_class(&pc, val, MDL);
 
 	/* If it is a class, we're updating it.  If it's any of the other
 	 * types (subclass, vendor or user class), the named class is a
