@@ -5624,7 +5624,7 @@ failover_lease_is_better
 Func Name :   dhcp_failover_process_bind_update
 Date Created: 2018/07/17
 Author:  	  wangzhe
-Description:  send BNDUPD message to secondary
+Description:  
 Input:	      
 Output:       
 Return:       None
