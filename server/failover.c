@@ -1684,9 +1684,13 @@ isc_result_t dhcp_failover_state_signal
 				   (link -> imsg -> reject_reason)));
 		    }
 		    omapi_disconnect(link->outer, 1);
-		} else if (link->imsg->type == FTM_BNDUPD) {
+		} 
+		else if (link->imsg->type == FTM_BNDUPD) 
+		{
 			dhcp_failover_process_bind_update(state, link->imsg);
-		} else if (link -> imsg -> type == FTM_BNDACK) {
+		} 
+		else if (link -> imsg -> type == FTM_BNDACK) 
+		{
 			dhcp_failover_process_bind_ack (state, link -> imsg);
 		} else if (link -> imsg -> type == FTM_UPDREQ) {
 			dhcp_failover_process_update_request (state,
@@ -3279,62 +3283,85 @@ int dhcp_failover_queue_ack
 	return 1;
 }
 
-void dhcp_failover_ack_queue_remove (dhcp_failover_state_t *state,
-				     struct lease *lease)
+/*********************************************************************
+Func Name :   dhcp_failover_ack_queue_remove
+Date Created: 2018/07/17
+Author:  	  wangzhe
+Description:  remove lease from ack queue
+Input:	      
+Output:       
+Return:       None
+Caution : 	  
+*********************************************************************/
+void dhcp_failover_ack_queue_remove 
+(
+	dhcp_failover_state_t *state,
+	struct lease *lease
+)
 {
 	struct lease *lp;
 
-	if (!(lease -> flags & ON_ACK_QUEUE))
+	/* if lease is already removed from ack queue, just return */
+	if (!(lease->flags & ON_ACK_QUEUE))
 		return;
 
-	if (state -> ack_queue_head == lease) {
-		lease_dereference (&state -> ack_queue_head, MDL);
-		if (lease -> next_pending) {
-			lease_reference (&state -> ack_queue_head,
-					 lease -> next_pending, MDL);
-			lease_dereference (&lease -> next_pending, MDL);
-		} else {
-			lease_dereference (&state -> ack_queue_tail, MDL);
+	if (state->ack_queue_head == lease) 
+	{
+		lease_dereference(&state->ack_queue_head, MDL);
+		if (lease->next_pending) 
+		{
+			lease_reference(&state->ack_queue_head, lease->next_pending, MDL);
+			lease_dereference(&lease->next_pending, MDL);
+		} 
+		else 
+		{
+			lease_dereference(&state->ack_queue_tail, MDL);
 		}
-	} else {
-		for (lp = state -> ack_queue_head;
-		     lp && lp -> next_pending != lease;
-		     lp = lp -> next_pending)
+	} 
+	else 
+	{
+		for (lp = state->ack_queue_head;
+		     lp && lp->next_pending != lease;
+		     lp = lp->next_pending)
 			;
 
 		if (!lp)
 			return;
 
-		lease_dereference (&lp -> next_pending, MDL);
-		if (lease -> next_pending) {
-			lease_reference (&lp -> next_pending,
-					 lease -> next_pending, MDL);
-			lease_dereference (&lease -> next_pending, MDL);
-		} else {
-			lease_dereference (&state -> ack_queue_tail, MDL);
-			if (lp -> next_pending) {
-				log_error ("state -> ack_queue_tail");
-				abort ();
+		lease_dereference(&lp->next_pending, MDL);
+		if (lease->next_pending) 
+		{
+			lease_reference(&lp->next_pending, lease->next_pending, MDL);
+			lease_dereference(&lease->next_pending, MDL);
+		}
+		else 
+		{
+			lease_dereference(&state->ack_queue_tail, MDL);
+			if (lp->next_pending) 
+			{
+				log_error("state->ack_queue_tail");
+				abort();
 			}
-			lease_reference (&state -> ack_queue_tail, lp, MDL);
+			lease_reference(&state->ack_queue_tail, lp, MDL);
 		}
 	}
 
-	lease -> flags &= ~ON_ACK_QUEUE;
+	lease->flags &= ~ON_ACK_QUEUE;
 	/* Multiple acks on one XID is an error and may cause badness. */
 	lease->last_xid = 0;
 	/* XXX: this violates draft-failover.  We can't send another
 	 * update just because we forgot about an old one that hasn't
 	 * been acked yet.
 	 */
-	state -> cur_unacked_updates--;
+	state->cur_unacked_updates--;
 
 	/*
 	 * When updating leases as a result of an ack, we defer the commit
 	 * for performance reasons.  When there are no more acks pending,
 	 * do a commit.
 	 */
-	if (state -> cur_unacked_updates == 0) {
+	if (state->cur_unacked_updates == 0) 
+	{
 		commit_leases();
 	}
 }
@@ -5530,8 +5557,12 @@ isc_result_t dhcp_failover_send_update_done (dhcp_failover_state_t *state)
  * should monitor as we gain experience with these dueling events.
  */
 static isc_boolean_t
-failover_lease_is_better(dhcp_failover_state_t *state, struct lease *lease,
-			 failover_message_t *msg)
+failover_lease_is_better
+(
+	dhcp_failover_state_t *state, 
+	struct lease *lease,
+	failover_message_t *msg
+)
 {
 	binding_state_t local_state;
 	TIME msg_cltt;
@@ -5546,9 +5577,11 @@ failover_lease_is_better(dhcp_failover_state_t *state, struct lease *lease,
 	else
 		msg_cltt = 0;
 
-	switch(local_state) {
+	switch(local_state) 
+	{
 	      case FTS_ACTIVE:
-		if (msg->binding_status == FTS_ACTIVE) {
+		if (msg->binding_status == FTS_ACTIVE) 
+		{
 			if (msg_cltt < lease->cltt)
 				return ISC_TRUE;
 			else if (msg_cltt > lease->cltt)
@@ -5557,7 +5590,9 @@ failover_lease_is_better(dhcp_failover_state_t *state, struct lease *lease,
 				return ISC_TRUE;
 			else
 				return ISC_FALSE;
-		} else if (msg->binding_status == FTS_EXPIRED) {
+		} 
+		else if (msg->binding_status == FTS_EXPIRED) 
+		{
 			return ISC_FALSE;
 		}
 		/* FALL THROUGH */
@@ -5585,6 +5620,16 @@ failover_lease_is_better(dhcp_failover_state_t *state, struct lease *lease,
 	return ISC_FALSE;
 }
 
+/*********************************************************************
+Func Name :   dhcp_failover_process_bind_update
+Date Created: 2018/07/17
+Author:  	  wangzhe
+Description:  send BNDUPD message to secondary
+Input:	      
+Output:       
+Return:       None
+Caution : 	  
+*********************************************************************/
 isc_result_t dhcp_failover_process_bind_update 
 (
 	dhcp_failover_state_t *state,
