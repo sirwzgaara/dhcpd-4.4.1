@@ -282,6 +282,16 @@ isc_result_t omapi_signal (omapi_object_t *handle, const char *name, ...)
 	return status;
 }
 
+/*********************************************************************
+Func Name :   omapi_signal_in
+Date Created: 2018/07/17
+Author:  	  wangzhe
+Description:  omapi对象信号入口函数
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution :     每个使用omapi的对象都嵌入omapi结构，通过此函数进行信号传递
+*********************************************************************/
 isc_result_t omapi_signal_in (omapi_object_t *handle, const char *name, ...)
 {
 	va_list ap;
@@ -291,12 +301,12 @@ isc_result_t omapi_signal_in (omapi_object_t *handle, const char *name, ...)
 		return ISC_R_NOTFOUND;
 	va_start (ap, name);
 
-	if (handle -> type -> signal_handler)
-		status = (*(handle -> type -> signal_handler)) (handle,
-								name, ap);
+	if (handle->type->signal_handler)
+		status = (*(handle->type->signal_handler))(handle, name, ap);
 	else
 		status = ISC_R_NOTFOUND;
-	va_end (ap);
+	
+	va_end(ap);
 	return status;
 }
 

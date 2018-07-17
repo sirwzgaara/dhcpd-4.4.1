@@ -242,7 +242,8 @@ isc_result_t omapi_register_io_object
 	
 	obj->closed = ISC_FALSE;  /* mark as open */
 
-	/* connection->outer = omapi_io, omapi_io->inner = connection */
+	/* omapi_connection->outer = omapi_io, omapi_io->inner = omapi_connection */
+	/* omapi_listener->outer = omapi_io, omapi_io->inner = omapi_listener */
 	status = omapi_object_reference(&obj->inner, h, MDL);
 	if (status != ISC_R_SUCCESS)
 	{

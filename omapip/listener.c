@@ -61,9 +61,22 @@ isc_result_t omapi_listen (omapi_object_t *h,
 	return omapi_listen_addr (h, &addr, max);
 }
 
-isc_result_t omapi_listen_addr (omapi_object_t *h,
-				omapi_addr_t *addr,
-				int max)
+/*********************************************************************
+Func Name :   omapi_listen_addr
+Date Created: 2018/07/17
+Author:  	  wangzhe
+Description:  启动监听，传入failover listener对象，新建omapi listener对象
+Input:	      
+Output:       
+Return:       None
+Caution : 	  
+*********************************************************************/
+isc_result_t omapi_listen_addr 
+(
+	omapi_object_t *h,
+	omapi_addr_t *addr,
+	int max
+)
 {
 	isc_result_t status;
 	omapi_listener_object_t *obj;
@@ -75,7 +88,7 @@ isc_result_t omapi_listen_addr (omapi_object_t *h,
 
 	/* Get the handle. */
 	obj = (omapi_listener_object_t *)0;
-	status = omapi_listener_allocate (&obj, MDL);
+	status = omapi_listener_allocate(&obj, MDL);
 	if (status != ISC_R_SUCCESS)
 		/*
 		 * we could simply return here but by going to
@@ -87,26 +100,25 @@ isc_result_t omapi_listen_addr (omapi_object_t *h,
 		goto error_exit;
 	obj->socket = -1;
 
-	/* Connect this object to the inner object. */
-	status = omapi_object_reference (&h -> outer,
-					 (omapi_object_t *)obj, MDL);
+	/* failover_listener->outer = omapi_listener, omapi_listener->inner = failover_listener */
+	status = omapi_object_reference(&h->outer, (omapi_object_t *)obj, MDL);
 	if (status != ISC_R_SUCCESS)
 		goto error_exit;
-	status = omapi_object_reference (&obj -> inner, h, MDL);
+	
+	status = omapi_object_reference(&obj->inner, h, MDL);
 	if (status != ISC_R_SUCCESS)
 		goto error_exit;
 
 	/* Set up the address on which we will listen... */
-	obj -> address.sin_port = htons (addr -> port);
-	memcpy (&obj -> address.sin_addr,
-		addr -> address, sizeof obj -> address.sin_addr);
+	obj->address.sin_port = htons(addr->port);
+	memcpy(&obj->address.sin_addr, addr->address, sizeof(obj->address.sin_addr));
+	
 #if defined (HAVE_SA_LEN)
-	obj -> address.sin_len =
-		sizeof (struct sockaddr_in);
+	obj->address.sin_len = sizeof(struct sockaddr_in);
 #endif
-	obj -> address.sin_family = AF_INET;
-	memset (&(obj -> address.sin_zero), 0,
-		sizeof obj -> address.sin_zero);
+
+	obj->address.sin_family = AF_INET;
+	memset(&(obj->address.sin_zero), 0, sizeof(obj->address.sin_zero));
 
 #if defined (TRACING)
 	/* If we're playing back a trace file, we remember the object
@@ -116,8 +128,9 @@ isc_result_t omapi_listen_addr (omapi_object_t *h,
 	}  else {
 #endif
 		/* Create a socket on which to listen. */
-		obj -> socket = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP);
-		if (obj->socket == -1) {
+		obj->socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+		if (obj->socket == -1) 
+		{
 			if (errno == EMFILE
 			    || errno == ENFILE || errno == ENOBUFS)
 				status = ISC_R_NORESOURCES;
@@ -136,18 +149,17 @@ isc_result_t omapi_listen_addr (omapi_object_t *h,
 		/* Set the REUSEADDR option so that we don't fail to start if
 		   we're being restarted. */
 		i = 1;
-		if (setsockopt (obj -> socket, SOL_SOCKET, SO_REUSEADDR,
-				(char *)&i, sizeof i) < 0) {
+		if (setsockopt(obj->socket, SOL_SOCKET, SO_REUSEADDR, (char *)&i, sizeof i) < 0) 
+		{
 			status = ISC_R_UNEXPECTED;
 			goto error_exit;
 		}
 
 		/* Try to bind to the wildcard address using the port number
 		   we were given. */
-		i = bind (obj -> socket,
-			  (struct sockaddr *)&obj -> address,
-			  sizeof obj -> address);
-		if (i < 0) {
+		i = bind(obj->socket, (struct sockaddr *)&obj->address, sizeof(obj->address));
+		if (i < 0)
+		{
 			if (errno == EADDRINUSE)
 				status = ISC_R_ADDRNOTAVAIL;
 			else if (errno == EPERM)
@@ -158,24 +170,27 @@ isc_result_t omapi_listen_addr (omapi_object_t *h,
 		}
 
 		/* Now tell the kernel to listen for connections. */
-		if (listen (obj -> socket, max)) {
+		if (listen(obj->socket, max)) 
+		{
 			status = ISC_R_UNEXPECTED;
 			goto error_exit;
 		}
 
-		if (fcntl (obj -> socket, F_SETFL, O_NONBLOCK) < 0) {
+		if (fcntl(obj->socket, F_SETFL, O_NONBLOCK) < 0) 
+		{
 			status = ISC_R_UNEXPECTED;
 			goto error_exit;
 		}
 
-		status = omapi_register_io_object ((omapi_object_t *)obj,
+		status = omapi_register_io_object((omapi_object_t *)obj,
 						   omapi_listener_readfd, 0,
 						   omapi_accept, 0, 0);
 #if defined (TRACING)
 	}
 #endif
 
-	omapi_listener_dereference (&obj, MDL);
+	omapi_listener_dereference(&obj, MDL);
+
 	return status;
 
 error_exit:
@@ -202,15 +217,25 @@ int omapi_listener_readfd (omapi_object_t *h)
 {
 	omapi_listener_object_t *l;
 
-	if (h -> type != omapi_type_listener)
+	if (h->type != omapi_type_listener)
 		return -1;
 	l = (omapi_listener_object_t *)h;
 	
-	return l -> socket;
+	return l->socket;
 }
 
-/* Reader callback for a listener object.   Accept an incoming connection. */
-isc_result_t omapi_accept (omapi_object_t *h)
+/*********************************************************************
+Func Name :   omapi_accept
+Date Created: 2018/07/17
+Author:  	  wangzhe
+Description:  收包函数入口，传入对象是omapi_listener
+Input:	      
+Output:       
+Return:       None
+Caution : 	  Reader callback for a listener object.  
+				Accept an incoming connection
+*********************************************************************/
+isc_result_t omapi_accept(omapi_object_t *h)
 {
 	isc_result_t status;
 	socklen_t len;
@@ -219,21 +244,23 @@ isc_result_t omapi_accept (omapi_object_t *h)
 	struct sockaddr_in addr;
 	int socket;
 
-	if (h -> type != omapi_type_listener)
+	if (h->type != omapi_type_listener)
 		return DHCP_R_INVALIDARG;
+	
 	listener = (omapi_listener_object_t *)h;
 
 	/* Accept the connection. */
-	len = sizeof addr;
-	socket = accept (listener -> socket,
-			 ((struct sockaddr *)&(addr)), &len);
-	if (socket < 0) {
+	len = sizeof(addr);
+	socket = accept(listener->socket, ((struct sockaddr *)&(addr)), &len);
+	if (socket < 0) 
+	{
 		if (errno == EMFILE || errno == ENFILE || errno == ENOBUFS)
 			return ISC_R_NORESOURCES;
 		return ISC_R_UNEXPECTED;
 	}
 
-	if ((MAX_FD_VALUE != 0) && (socket > MAX_FD_VALUE)) {
+	if ((MAX_FD_VALUE != 0) && (socket > MAX_FD_VALUE)) 
+	{
 		close(socket);
 		return (ISC_R_NORESOURCES);
 	}
@@ -254,31 +281,44 @@ isc_result_t omapi_accept (omapi_object_t *h)
 #endif
 
 	obj = (omapi_connection_object_t *)0;
-	status = omapi_listener_connect (&obj, listener, socket, &addr);
-	if (status != ISC_R_SUCCESS) {
-		close (socket);
+	status = omapi_listener_connect(&obj, listener, socket, &addr);
+	if (status != ISC_R_SUCCESS) 
+	{
+		close(socket);
 		return status;
 	}
 
-	status = omapi_register_io_object ((omapi_object_t *)obj,
+	status = omapi_register_io_object((omapi_object_t *)obj,
 					   omapi_connection_readfd,
 					   omapi_connection_writefd,
 					   omapi_connection_reader,
 					   omapi_connection_writer,
 					   omapi_connection_reaper);
 
-	/* Lose our reference to the connection, so it'll be gc'd when it's
-	   reaped. */
+	/* Lose our reference to the connection, so it'll be gc'd when it's reaped. */
 	omapi_connection_dereference (&obj, MDL);
 	if (status != ISC_R_SUCCESS)
-		omapi_disconnect ((omapi_object_t *)(obj), 1);
+		omapi_disconnect((omapi_object_t *)(obj), 1);
 	return status;
 }
 
-isc_result_t omapi_listener_connect (omapi_connection_object_t **obj,
-				     omapi_listener_object_t *listener,
-				     int socket,
-				     struct sockaddr_in *remote_addr)
+/*********************************************************************
+Func Name :   omapi_listener_connect
+Date Created: 2018/07/17
+Author:  	  wangzhe
+Description:  建立TCP连接后调用此函数，创建connection对象
+Input:	      
+Output:       
+Return:       None
+Caution : 	  
+*********************************************************************/
+isc_result_t omapi_listener_connect 
+(
+	omapi_connection_object_t **obj,
+	omapi_listener_object_t *listener,
+	int socket,
+	struct sockaddr_in *remote_addr
+)
 {
 	isc_result_t status;
 	omapi_object_t *h = (omapi_object_t *)listener;
@@ -289,35 +329,39 @@ isc_result_t omapi_listener_connect (omapi_connection_object_t **obj,
 #endif
 	
 	/* Get the handle. */
-	status = omapi_connection_allocate (obj, MDL);
+	status = omapi_connection_allocate(obj, MDL);
 	if (status != ISC_R_SUCCESS)
 		return status;
 
-	(*obj) -> state = omapi_connection_connected;
-	(*obj) -> remote_addr = *remote_addr;
-	(*obj) -> socket = socket;
+	(*obj)->state 		= omapi_connection_connected;
+	(*obj)->remote_addr = *remote_addr;
+	(*obj)->socket 		= socket;
 
 	/* Verify that this host is allowed to connect. */
-	if (listener -> verify_addr) {
+	if (listener->verify_addr) 
+	{
 		addr.addrtype = AF_INET;
-		addr.addrlen = sizeof (remote_addr -> sin_addr);
-		memcpy (addr.address, &remote_addr -> sin_addr,
-			sizeof (remote_addr -> sin_addr));
-		addr.port = ntohs(remote_addr -> sin_port);
+		addr.addrlen = sizeof(remote_addr->sin_addr);
+		memcpy(addr.address, &remote_addr->sin_addr, sizeof(remote_addr->sin_addr));
+		addr.port = ntohs(remote_addr->sin_port);
 
-		status = (listener -> verify_addr) (h, &addr);
-		if (status != ISC_R_SUCCESS) {
-			omapi_disconnect ((omapi_object_t *)(*obj), 1);
-			omapi_connection_dereference (obj, MDL);
+		status = (listener->verify_addr)(h, &addr);
+		if (status != ISC_R_SUCCESS) 
+		{
+			omapi_disconnect((omapi_object_t *)(*obj), 1);
+			omapi_connection_dereference(obj, MDL);
 			return status;
 		}
 	}
 
-	omapi_listener_reference (&(*obj) -> listener, listener, MDL);
+	omapi_listener_reference(&(*obj)->listener, listener, MDL);
+	
 #if defined (TRACING)
-	omapi_connection_register (*obj, MDL);
+	omapi_connection_register(*obj, MDL);
 #endif
-	status = omapi_signal (h, "connect", (*obj));
+
+	status = omapi_signal(h, "connect", (*obj));
+
 	return status;
 }
 
@@ -461,12 +505,12 @@ isc_result_t omapi_listener_destroy (omapi_object_t *h,
 isc_result_t omapi_listener_signal_handler (omapi_object_t *h,
 					    const char *name, va_list ap)
 {
-	if (h -> type != omapi_type_listener)
+	if (h->type != omapi_type_listener)
 		return DHCP_R_INVALIDARG;
 	
-	if (h -> inner && h -> inner -> type -> signal_handler)
-		return (*(h -> inner -> type -> signal_handler)) (h -> inner,
-								  name, ap);
+	if (h->inner && h->inner->type->signal_handler)
+		return (*(h->inner->type->signal_handler))(h->inner, name, ap);
+	
 	return ISC_R_NOTFOUND;
 }
 

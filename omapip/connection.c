@@ -472,8 +472,11 @@ static void trace_disconnect_stop (trace_type_t *ttype) { }
    close the connection immediately.   Otherwise, shut down the receiving end
    but allow any unsent data to be sent before actually closing the socket. */
 
-isc_result_t omapi_disconnect (omapi_object_t *h,
-			       int force)
+isc_result_t omapi_disconnect 
+(
+	omapi_object_t *h,
+	int force
+)
 {
 	omapi_connection_object_t *c;
 
@@ -482,7 +485,7 @@ isc_result_t omapi_disconnect (omapi_object_t *h,
 #endif
 
 	c = (omapi_connection_object_t *)h;
-	if (c -> type != omapi_type_connection)
+	if (c->type != omapi_type_connection)
 		return DHCP_R_INVALIDARG;
 
 #if defined (TRACING)
@@ -502,10 +505,11 @@ isc_result_t omapi_disconnect (omapi_object_t *h,
 	}
 	if (!trace_playback ()) {
 #endif
-		if (!force) {
+		if (!force) 
+		{
 			/* If we're already disconnecting, we don't have to do
 			   anything. */
-			if (c -> state == omapi_connection_disconnecting)
+			if (c->state == omapi_connection_disconnecting)
 				return ISC_R_SUCCESS;
 
 			/* Try to shut down the socket - this sends a FIN to
@@ -513,19 +517,20 @@ isc_result_t omapi_disconnect (omapi_object_t *h,
 			   data.   If the shutdown succeeds, and we still
 			   have bytes left to write, defer closing the socket
 			   until that's done. */
-			if (!shutdown (c -> socket, SHUT_RD)) {
-				if (c -> out_bytes > 0) {
-					c -> state =
-						omapi_connection_disconnecting;
+			if (!shutdown(c->socket, SHUT_RD)) 
+			{
+				if (c->out_bytes > 0) 
+				{
+					c->state = omapi_connection_disconnecting;
 					return ISC_R_SUCCESS;
 				}
 			}
 		}
-		close (c -> socket);
+		close(c->socket);
 #if defined (TRACING)
 	}
 #endif
-	c -> state = omapi_connection_closed;
+	c->state = omapi_connection_closed;
 
 #if 0
 	/*
@@ -544,18 +549,21 @@ isc_result_t omapi_disconnect (omapi_object_t *h,
 		omapi_object_dereference (&h -> outer, MDL);
 	}
 #else
-	if (h->outer) {
+	if (h->outer) 
+	{
 		omapi_unregister_io_object(h);
 	}
 #endif
 
 	/* If whatever created us registered a signal handler, send it
 	   a disconnect signal. */
-	omapi_signal (h, "disconnect", h);
+	omapi_signal(h, "disconnect", h);
 
 	/* Disconnect from protocol object, if any. */
-	if (h->inner != NULL) {
-		if (h->inner->outer != NULL) {
+	if (h->inner != NULL) 
+	{
+		if (h->inner->outer != NULL) 
+		{
 			omapi_object_dereference(&h->inner->outer, MDL);
 		}
 		omapi_object_dereference(&h->inner, MDL);
@@ -565,11 +573,14 @@ isc_result_t omapi_disconnect (omapi_object_t *h,
 		function, but there is no special-purpose function to
 		dereference connections, so these just get leaked */
 	/* Free any buffers */
-	if (c->inbufs != NULL) {
+	if (c->inbufs != NULL) 
+	{
 		omapi_buffer_dereference(&c->inbufs, MDL);
 	}
 	c->in_bytes = 0;
-	if (c->outbufs != NULL) {
+	
+	if (c->outbufs != NULL) 
+	{
 		omapi_buffer_dereference(&c->outbufs, MDL);
 	}
 	c->out_bytes = 0;
@@ -768,8 +779,9 @@ static isc_result_t omapi_connection_connect_internal(omapi_object_t *h)
 		return status;
 	}
 
-	omapi_signal_in (h, "connect");
-	omapi_addr_list_dereference (&c -> connect_list, MDL);
+	omapi_signal_in(h, "connect");
+	omapi_addr_list_dereference(&c->connect_list, MDL);
+	
 	return ISC_R_INPROGRESS;
 }
 
@@ -1111,6 +1123,16 @@ isc_result_t omapi_connection_destroy (omapi_object_t *h,
 	return ISC_R_SUCCESS;
 }
 
+/*********************************************************************
+Func Name :   omapi_connection_signal_handler
+Date Created: 2018/07/17
+Author:  	  wangzhe
+Description:  connection对象的信号函数
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution : 
+*********************************************************************/
 isc_result_t omapi_connection_signal_handler (omapi_object_t *h,
 					      const char *name, va_list ap)
 {
