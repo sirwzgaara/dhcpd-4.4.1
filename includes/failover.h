@@ -325,7 +325,7 @@ enum service_state {
 typedef struct _dhcp_failover_config {
 	struct option_cache *address;
 	int port;
-	u_int32_t max_flying_updates;
+	u_int32_t max_flying_updates;	//允许的最多发到peer但是没有收到ack的lease数量
 	enum failover_state state;
 	TIME stos;
 	u_int32_t max_response_delay;
