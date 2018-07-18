@@ -1693,22 +1693,28 @@ isc_result_t dhcp_failover_state_signal
 		{
 			dhcp_failover_process_bind_ack(state, link->imsg);
 		} 
-		else if (link -> imsg -> type == FTM_UPDREQ) {
-			dhcp_failover_process_update_request (state,
-							      link -> imsg);
-		} else if (link -> imsg -> type == FTM_UPDREQALL) {
-			dhcp_failover_process_update_request_all
-				(state, link -> imsg);
-		} else if (link -> imsg -> type == FTM_UPDDONE) {
-			dhcp_failover_process_update_done (state,
-							   link -> imsg);
-		} else if (link -> imsg -> type == FTM_POOLREQ) {
+		else if (link->imsg->type == FTM_UPDREQ) 
+		{
+			dhcp_failover_process_update_request(state, link->imsg);
+		}
+		else if (link->imsg->type == FTM_UPDREQALL) 
+		{
+			dhcp_failover_process_update_request_all(state, link->imsg);
+		} 
+		else if(link->imsg->type == FTM_UPDDONE) 
+		{
+			dhcp_failover_process_update_done(state, link->imsg);
+		} 
+		else if (link->imsg->type == FTM_POOLREQ) 
+		{
 			dhcp_failover_pool_reqbalance(state);
 		} else if (link -> imsg -> type == FTM_POOLRESP) {
 			log_info ("pool response: %ld leases",
 				  (unsigned long)
 				  link -> imsg -> addresses_transferred);
-		} else if (link->imsg->type == FTM_STATE) {
+		} 
+		else if (link->imsg->type == FTM_STATE) 
+		{
 			dhcp_failover_peer_state_changed(state, link->imsg);
 		}
 
@@ -2297,6 +2303,7 @@ isc_result_t dhcp_failover_peer_state_changed
 	new_state = msg->server_state;
 	startupp = (msg->server_flags & FTF_SERVER_STARTUP) ? 1 : 0;
 
+	/* 若对端变化到的状态和本端保存的对端状态一致 */
 	if (state->partner.state == new_state && state->me.state) 
 	{
 		switch (state->me.state) 
@@ -2309,8 +2316,7 @@ isc_result_t dhcp_failover_peer_state_changed
 			 * back to whereever we were before we stopped.
 			 */
 			if (state->saved_state == resolution_interrupted)
-				dhcp_failover_set_state(state,
-							potential_conflict);
+				dhcp_failover_set_state(state, potential_conflict);
 			else
 				dhcp_failover_set_state(state, state->saved_state);
 			return ISC_R_SUCCESS;
@@ -2351,7 +2357,9 @@ isc_result_t dhcp_failover_peer_state_changed
 	if ((state->me.state == normal) && (state->partner.state == normal))
 		log_info("failover peer %s: Both servers normal", state->name);
 
-	if (!write_failover_state (state) || !commit_leases ()) {
+	/* 写入本地稳定存储 */
+	if (!write_failover_state (state) || !commit_leases ()) 
+	{
 		/* This is bad, but it's not fatal.  Of course, if we
 		   can't write to the lease database, we're not going to
 		   get much done anyway. */
@@ -2359,10 +2367,10 @@ isc_result_t dhcp_failover_peer_state_changed
 			   state -> name);
 	}
 
-	/* Quickly validate the new state as being one of the 13 known
-	 * states.
+	/* Quickly validate the new state as being one of the 13 known states.
 	 */
-	switch (new_state) {
+	switch (new_state) 
+	{
 	      case unknown_state:
 	      case startup:
 	      case normal:
@@ -2388,21 +2396,20 @@ isc_result_t dhcp_failover_peer_state_changed
 	/* Do any state transitions that are required as a result of the
 	   peer's state transition. */
 
-	switch (state->me.state == startup ?
-		state->saved_state : state -> me.state) {
+	switch (state->me.state == startup ? state->saved_state : state->me.state) 
+	{
 	      case normal:
 		switch (new_state) 
 		{
 		      case normal:
-			dhcp_failover_state_pool_check (state);
+			dhcp_failover_state_pool_check(state);
 			break;
 
 		      case partner_down:
-			if (state -> me.state == startup)
-				dhcp_failover_set_state (state, recover);
+			if (state->me.state == startup)
+				dhcp_failover_set_state(state, recover);
 			else
-				dhcp_failover_set_state (state,
-							 potential_conflict);
+				dhcp_failover_set_state(state, potential_conflict);
 			break;
 
 		      case potential_conflict:
@@ -3081,7 +3088,7 @@ int dhcp_failover_state_pool_check (dhcp_failover_state_t *state)
 Func Name :   dhcp_failover_send_updates
 Date Created: 2018/07/18
 Author:  	  wangzhe
-Description:  发送所有更新到对端
+Description:  发送所有更新到对端，包含ack和update
 Input:	      
 Output:       
 Return:       isc_result_t
@@ -3161,35 +3168,44 @@ isc_result_t dhcp_failover_send_updates
 	return ISC_R_SUCCESS;
 }
 
-/* Queue an update for a lease.   Always returns 1 at this point - it's
-   not an error for this to be called on a lease for which there's no
-   failover peer. */
-
-int dhcp_failover_queue_update (struct lease *lease, int immediate)
+/*********************************************************************
+Func Name :   dhcp_failover_queue_update
+Date Created: 2018/07/18
+Author:  	  wangzhe
+Description:  将一个lease加入update队列，若之前在ack队列，移除
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution : 	  Queue an update for a lease.   Always returns 1 at this point - it's
+			   not an error for this to be called on a lease for which there's no
+			   failover peer
+*********************************************************************/
+int dhcp_failover_queue_update(struct lease *lease, int immediate)
 {
 	dhcp_failover_state_t *state;
 
-	if (!lease -> pool ||
-	    !lease -> pool -> failover_peer)
+	if (!lease->pool || !lease->pool->failover_peer)
 		return 1;
 
 	/* If it's already on the update queue, leave it there. */
-	if (lease -> flags & ON_UPDATE_QUEUE)
+	if (lease->flags & ON_UPDATE_QUEUE)
 		return 1;
 
 	/* Get the failover state structure for this lease. */
-	state = lease -> pool -> failover_peer;
+	state = lease->pool->failover_peer;
 
 	/* If it's on the ack queue, take it off. */
-	if (lease -> flags & ON_ACK_QUEUE)
-		dhcp_failover_ack_queue_remove (state, lease);
+	if (lease->flags & ON_ACK_QUEUE)
+		dhcp_failover_ack_queue_remove(state, lease);
 
-	if (state -> update_queue_head) {
-		lease_reference (&state -> update_queue_tail -> next_pending,
-				 lease, MDL);
-		lease_dereference (&state -> update_queue_tail, MDL);
-	} else {
-		lease_reference (&state -> update_queue_head, lease, MDL);
+	if (state->update_queue_head) 
+	{
+		lease_reference(&state->update_queue_tail->next_pending, lease, MDL);
+		lease_dereference(&state->update_queue_tail, MDL);
+	} 
+	else 
+	{
+		lease_reference(&state->update_queue_head, lease, MDL);
 	}
 #if defined (POINTER_DEBUG)
 	if (lease -> next_pending) {
@@ -3200,10 +3216,11 @@ int dhcp_failover_queue_update (struct lease *lease, int immediate)
 		abort ();
 	}
 #endif
-	lease_reference (&state -> update_queue_tail, lease, MDL);
-	lease -> flags |= ON_UPDATE_QUEUE;
+	lease_reference(&state->update_queue_tail, lease, MDL);
+	lease->flags |= ON_UPDATE_QUEUE;
 	if (immediate)
-		dhcp_failover_send_updates (state);
+		dhcp_failover_send_updates(state);
+	
 	return 1;
 }
 
@@ -6273,8 +6290,21 @@ isc_result_t dhcp_failover_process_bind_ack
 	goto out;
 }
 
-isc_result_t dhcp_failover_generate_update_queue (dhcp_failover_state_t *state,
-						  int everythingp)
+/*********************************************************************
+Func Name :   dhcp_failover_generate_update_queue
+Date Created: 2018/07/18
+Author:  	  wangzhe
+Description:  遍历pool，将所有需要update的lease加入update列表
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution : 	  
+*********************************************************************/
+isc_result_t dhcp_failover_generate_update_queue 
+(
+	dhcp_failover_state_t *state,
+	int everythingp
+)
 {
 	struct shared_network *s;
 	struct pool *p;
@@ -6290,115 +6320,156 @@ isc_result_t dhcp_failover_generate_update_queue (dhcp_failover_state_t *state,
 
 	/* Loop through each pool in each shared network and call the
 	   expiry routine on the pool. */
-	for (s = shared_networks; s; s = s -> next) {
-	    for (p = s -> pools; p; p = p -> next) {
-		if (p->failover_peer != state)
-			continue;
+	for (s = shared_networks; s; s = s->next) 
+	{
+	    for (p = s->pools; p; p = p->next) 
+		{
+			if (p->failover_peer != state)
+				continue;
 
-		lptr[FREE_LEASES] = &p->free;
-		lptr[ACTIVE_LEASES] = &p->active;
-		lptr[EXPIRED_LEASES] = &p->expired;
-		lptr[ABANDONED_LEASES] = &p->abandoned;
-		lptr[BACKUP_LEASES] = &p->backup;
-		lptr[RESERVED_LEASES] = &p->reserved;
+			lptr[FREE_LEASES] 	   = &p->free;
+			lptr[ACTIVE_LEASES]    = &p->active;
+			lptr[EXPIRED_LEASES]   = &p->expired;
+			lptr[ABANDONED_LEASES] = &p->abandoned;
+			lptr[BACKUP_LEASES]    = &p->backup;
+			lptr[RESERVED_LEASES]  = &p->reserved;
 
-		for (i = FREE_LEASES; i <= RESERVED_LEASES; i++) {
-		    for (l = LEASE_GET_FIRSTP(lptr[i]);
-			 l != NULL;
-			 l = LEASE_GET_NEXTP(lptr[i], l)) {
-			if ((l->flags & ON_QUEUE) == 0 &&
-			    (everythingp ||
-			     (l->tstp > l->atsfp) ||
-			     (i == EXPIRED_LEASES))) {
-				l -> desired_binding_state = l -> binding_state;
-				dhcp_failover_queue_update (l, 0);
+			for (i = FREE_LEASES; i <= RESERVED_LEASES; i++) 
+			{
+			    for (l = LEASE_GET_FIRSTP(lptr[i]); l != NULL;
+				 	  l = LEASE_GET_NEXTP(lptr[i], l)) 
+				{
+					/* 若tstp比atsfp大，说明atsfp是0，即还没发给partner */
+					if ((l->flags & ON_QUEUE) == 0 &&
+					    (everythingp || (l->tstp > l->atsfp) || (i == EXPIRED_LEASES))) 
+					{
+						l->desired_binding_state = l->binding_state;
+						dhcp_failover_queue_update(l, 0);
+					}
+			    }
 			}
-		    }
-		}
 	    }
 	}
 	return ISC_R_SUCCESS;
 }
 
-isc_result_t
-dhcp_failover_process_update_request (dhcp_failover_state_t *state,
-				      failover_message_t *msg)
+/*********************************************************************
+Func Name :   dhcp_failover_process_update_request
+Date Created: 2018/07/18
+Author:  	  wangzhe
+Description:  收到ACK报文后调用此函数处理
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution : 	  
+*********************************************************************/
+isc_result_t dhcp_failover_process_update_request 
+(
+	dhcp_failover_state_t *state,
+	failover_message_t *msg
+)
 {
-	if (state->send_update_done) {
+	if (state->send_update_done) 
+	{
 		log_info("Received update request while old update still "
 			 "flying!  Silently discarding old request.");
 		lease_dereference(&state->send_update_done, MDL);
 	}
 
 	/* Generate a fresh update queue. */
-	dhcp_failover_generate_update_queue (state, 0);
+	dhcp_failover_generate_update_queue(state, 0);
 
 	state->updxid = msg->xid;
 
 	/* If there's anything on the update queue (there shouldn't be
 	   anything on the ack queue), trigger an update done message
 	   when we get an ack for that lease. */
-	if (state -> update_queue_tail) {
-		lease_reference (&state -> send_update_done,
-				 state -> update_queue_tail, MDL);
-		dhcp_failover_send_updates (state);
-		log_info ("Update request from %s: sending update",
-			   state -> name);
-	} else {
+	if (state->update_queue_tail) 
+	{
+		lease_reference(&state->send_update_done, state->update_queue_tail, MDL);
+		dhcp_failover_send_updates(state);
+		log_info("Update request from %s: sending update", state->name);
+	} 
+	else 
+	{
 		/* Otherwise, there are no updates to send, so we can
 		   just send an UPDDONE message immediately. */
-		dhcp_failover_send_update_done (state);
-		log_info ("Update request from %s: nothing pending",
-			   state -> name);
+		dhcp_failover_send_update_done(state);
+		log_info("Update request from %s: nothing pending", state->name);
 	}
 
 	return ISC_R_SUCCESS;
 }
 
-isc_result_t
-dhcp_failover_process_update_request_all (dhcp_failover_state_t *state,
-					  failover_message_t *msg)
+/*********************************************************************
+Func Name :   dhcp_failover_process_update_request_all
+Date Created: 2018/07/18
+Author:  	  wangzhe
+Description:  收到UPDREQALL报文后调用此函数处理
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution : 	  
+*********************************************************************/
+isc_result_t dhcp_failover_process_update_request_all 
+(
+	dhcp_failover_state_t *state,
+	failover_message_t *msg
+)
 {
-	if (state->send_update_done) {
+	if (state->send_update_done) 
+	{
 		log_info("Received update request while old update still "
 			 "flying!  Silently discarding old request.");
 		lease_dereference(&state->send_update_done, MDL);
 	}
 
 	/* Generate a fresh update queue that includes every lease. */
-	dhcp_failover_generate_update_queue (state, 1);
+	dhcp_failover_generate_update_queue(state, 1);
 
 	state->updxid = msg->xid;
 
-	if (state -> update_queue_tail) {
-		lease_reference (&state -> send_update_done,
-				 state -> update_queue_tail, MDL);
-		dhcp_failover_send_updates (state);
-		log_info ("Update request all from %s: sending update",
-			   state -> name);
-	} else {
+	if (state->update_queue_tail) 
+	{
+		lease_reference(&state->send_update_done, state->update_queue_tail, MDL);
+		dhcp_failover_send_updates(state);
+		log_info ("Update request all from %s: sending update", state->name);
+	}
+	else 
+	{
 		/* This should really never happen, but it could happen
 		   on a server that currently has no leases configured. */
-		dhcp_failover_send_update_done (state);
-		log_info ("Update request all from %s: nothing pending",
-			   state -> name);
+		dhcp_failover_send_update_done(state);
+		log_info("Update request all from %s: nothing pending", state->name);
 	}
 
 	return ISC_R_SUCCESS;
 }
 
-isc_result_t
-dhcp_failover_process_update_done (dhcp_failover_state_t *state,
-				   failover_message_t *msg)
+/*********************************************************************
+Func Name :   dhcp_failover_process_update_request_all
+Date Created: 2018/07/18
+Author:  	  wangzhe
+Description:  收到UPDDONE报文后调用此函数处理
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution : 	  
+*********************************************************************/
+isc_result_t dhcp_failover_process_update_done 
+(
+	dhcp_failover_state_t *state,
+	failover_message_t *msg
+)
 {
 	struct timeval tv;
 
-	log_info ("failover peer %s: peer update completed.",
-		  state -> name);
+	log_info("failover peer %s: peer update completed.", state->name);
 
-	state -> curUPD = 0;
+	state->curUPD = 0;
 
-	switch (state -> me.state) {
+	switch (state->me.state) 
+	{
 	      case unknown_state:
 	      case partner_down:
 	      case normal:
@@ -6413,18 +6484,24 @@ dhcp_failover_process_update_done (dhcp_failover_state_t *state,
 
 		/* We got the UPDDONE, so we can go into normal state! */
 	      case potential_conflict:
-		if (state->partner.state == conflict_done) {
-			if (state->i_am == secondary) {
-				dhcp_failover_set_state (state, normal);
-			} else {
+		if (state->partner.state == conflict_done) 
+		{
+			if (state->i_am == secondary)
+			{
+				dhcp_failover_set_state(state, normal);
+			} 
+			else 
+			{
 				log_error("Secondary is in conflict_done "
 					  "state after conflict resolution, "
 					  "this is illegal.");
-				dhcp_failover_set_state (state, shut_down);
+				dhcp_failover_set_state(state, shut_down);
 			}
-		} else {
+		}
+		else 
+		{
 			if (state->i_am == primary)
-				dhcp_failover_set_state (state, conflict_done);
+				dhcp_failover_set_state(state, conflict_done);
 			else
 				log_error("Spurious update-done message.");
 		}
@@ -6441,26 +6518,28 @@ dhcp_failover_process_update_done (dhcp_failover_state_t *state,
 		   no point in waiting for MCLT to expire - this probably
 		   indicates the initial startup of a newly-configured
 		   failover pair. */
-		if (state -> me.stos + state -> mclt > cur_time &&
-		    state -> partner.state != recover &&
-		    state -> partner.state != recover_done) {
-			dhcp_failover_set_state (state, recover_wait);
+		if (state->me.stos + state->mclt > cur_time &&
+		    state->partner.state != recover &&
+		    state->partner.state != recover_done) 
+		{
+			dhcp_failover_set_state(state, recover_wait);
 #if defined (DEBUG_FAILOVER_TIMING)
 			log_info ("add_timeout +%d %s",
 				  (int)(cur_time -
 					state -> me.stos + state -> mclt),
 				  "dhcp_failover_recover_done");
 #endif
-			tv . tv_sec = (int)(state -> me.stos + state -> mclt);
-			tv . tv_usec = 0;
-			add_timeout (&tv,
+			tv.tv_sec = (int)(state->me.stos + state->mclt);
+			tv.tv_usec = 0;
+			add_timeout(&tv,
 				     dhcp_failover_recover_done,
 				     state,
 				     (tvref_t)omapi_object_reference,
 				     (tvunref_t)
 				     omapi_object_dereference);
-		} else
-			dhcp_failover_recover_done (state);
+		} 
+		else
+			dhcp_failover_recover_done(state);
 	}
 
 	return ISC_R_SUCCESS;
