@@ -1684,7 +1684,7 @@ isc_result_t dhcp_failover_state_signal
 				log_error ("Failover DISCONNECT from %s: %s",
 				   state ? state->name : "unknown",
 				   (dhcp_failover_reject_reason_print
-				   (link -> imsg -> reject_reason)));
+				   (link->imsg->reject_reason)));
 		    }
 		    omapi_disconnect(link->outer, 1);
 		} 
@@ -4962,7 +4962,7 @@ Description:  Send a connect message, master to secondary
 Input:	      
 Output:       
 Return:       None
-Caution : 	  创建连接之后，发送CONNECT消息，携带主要参数，主发给备，
+Caution : 	  创建连接时，发送CONNECT消息，携带主要参数，主发给备，
 			只在建立TCP连接的时候发送一次，后续不再发送
 *********************************************************************/
 isc_result_t dhcp_failover_send_connect(omapi_object_t *l)

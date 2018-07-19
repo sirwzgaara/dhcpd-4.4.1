@@ -306,10 +306,10 @@ isc_result_t omapi_accept(omapi_object_t *h)
 Func Name :   omapi_listener_connect
 Date Created: 2018/07/17
 Author:  	  wangzhe
-Description:  建立TCP连接后调用此函数，创建connection对象
+Description:  建立TCP连接时使用此函数，给listener对象发送connect信号
 Input:	      
 Output:       
-Return:       None
+Return:       isc_result_t
 Caution : 	  
 *********************************************************************/
 isc_result_t omapi_listener_connect 
