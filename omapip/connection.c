@@ -745,12 +745,12 @@ static isc_result_t omapi_connection_connect_internal(omapi_object_t *h)
 					status = ISC_R_NETUNREACH;
 					break;
 				      default:
-					status = uerr2isc (error);
+					status = uerr2isc(error);
 					break;
 				}
 				return status;
 			}
-			c -> state = omapi_connection_connecting;
+			c->state = omapi_connection_connecting;
 			return DHCP_R_INCOMPLETE;
 		}
 		c->state = omapi_connection_connected;

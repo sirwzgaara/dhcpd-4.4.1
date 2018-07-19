@@ -1330,6 +1330,7 @@ isc_result_t dhcp_failover_listener_signal
 		return status;
 	obj->peer_port = ntohs(c->remote_addr.sin_port);
 
+	/* link and connection */
 	status = omapi_object_reference(&obj->outer, (omapi_object_t *)c, MDL);
 	if (status != ISC_R_SUCCESS) 
 	{

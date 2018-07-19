@@ -360,6 +360,7 @@ isc_result_t omapi_listener_connect
 	omapi_connection_register(*obj, MDL);
 #endif
 
+	/* 给listener对象发信号，传入connection对象 */
 	status = omapi_signal(h, "connect", (*obj));
 
 	return status;
