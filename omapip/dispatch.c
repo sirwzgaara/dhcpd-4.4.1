@@ -854,8 +854,22 @@ isc_result_t omapi_io_destroy (omapi_object_t *h, const char *file, int line)
 	return ISC_R_NOTFOUND;
 }
 
-isc_result_t omapi_io_signal_handler (omapi_object_t *h,
-				      const char *name, va_list ap)
+/*********************************************************************
+Func Name :   omapi_io_signal_handler
+Date Created: 2018/07/19
+Author:  	  wangzhe
+Description:  omapi对象的signal函数，是所有对象的最顶层抽象
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution : 	  本层收到信号直接透传到下一层
+*********************************************************************/
+isc_result_t omapi_io_signal_handler 
+(
+	omapi_object_t *h,
+	const char *name, 
+	va_list ap
+)
 {
 	if (h->type != omapi_type_io_object)
 		return DHCP_R_INVALIDARG;

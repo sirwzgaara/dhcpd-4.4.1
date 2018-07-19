@@ -124,11 +124,18 @@ static void trace_connection_output_input (trace_type_t *ttype,
 static void trace_connection_output_stop (trace_type_t *ttype) { }
 
 #endif
-
-/* Make sure that at least len bytes are in the input buffer, and if not,
-   read enough bytes to make up the difference. */
-
-isc_result_t omapi_connection_reader (omapi_object_t *h)
+/*********************************************************************
+Func Name :   omapi_connection_reader
+Date Created: 2018/07/19
+Author:  	  wangzhe
+Description:  connection对象的reader函数，接收报文会调到这里
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution : 	  Make sure that at least len bytes are in the input buffer, and if not,
+   				read enough bytes to make up the difference
+*********************************************************************/
+isc_result_t omapi_connection_reader(omapi_object_t *h)
 {
 #if defined (TRACING)
 	return omapi_connection_reader_trace (h, 0, (char *)0, (unsigned *)0);
@@ -155,31 +162,36 @@ static isc_result_t omapi_connection_reader_trace (omapi_object_t *h,
 	if (c->in_bytes >= OMAPI_BUF_SIZE - 1 && c->in_bytes > c->bytes_needed)
 		return ISC_R_SUCCESS;
 
-
-	if (c -> inbufs) {
-		for (buffer = c -> inbufs; buffer -> next;
-		     buffer = buffer -> next)
+	/* 找到一个可用的buffer，若没有，新申请 */
+	if (c->inbufs) 
+	{
+		for (buffer = c->inbufs; buffer->next; buffer = buffer->next)
 			;
-		if (!BUFFER_BYTES_FREE (buffer)) {
-			status = omapi_buffer_new (&buffer -> next, MDL);
+		
+		if (!BUFFER_BYTES_FREE(buffer)) 
+		{
+			status = omapi_buffer_new(&buffer->next, MDL);
 			if (status != ISC_R_SUCCESS)
 				return status;
-			buffer = buffer -> next;
+			buffer = buffer->next;
 		}
-	} else {
-		status = omapi_buffer_new (&c -> inbufs, MDL);
+	} 
+	else 
+	{
+		status = omapi_buffer_new(&c->inbufs, MDL);
 		if (status != ISC_R_SUCCESS)
 			return status;
-		buffer = c -> inbufs;
+		buffer = c->inbufs;
 	}
 
-	bytes_to_read = BUFFER_BYTES_FREE (buffer);
+	bytes_to_read = BUFFER_BYTES_FREE(buffer);
 
-	while (bytes_to_read) {
-		if (buffer -> tail > buffer -> head)
-			read_len = sizeof (buffer -> buf) - buffer -> tail;
+	while (bytes_to_read) 
+	{
+		if (buffer->tail > buffer->head)
+			read_len = sizeof(buffer->buf) - buffer->tail;
 		else
-			read_len = buffer -> head - buffer -> tail;
+			read_len = buffer->head - buffer->tail;
 
 #if defined (TRACING)
 		if (trace_playback()) {
@@ -199,11 +211,10 @@ static isc_result_t omapi_connection_reader_trace (omapi_object_t *h,
 		} else
 #endif
 		{
-			read_status = read (c -> socket,
-					    &buffer -> buf [buffer -> tail],
-					    read_len);
+			read_status = read(c->socket, &buffer->buf[buffer->tail], read_len);
 		}
-		if (read_status < 0) {
+		if (read_status < 0) 
+		{
 			if (errno == EWOULDBLOCK)
 				break;
 			else if (errno == EIO)
@@ -219,8 +230,9 @@ static isc_result_t omapi_connection_reader_trace (omapi_object_t *h,
 
 		/* If we got a zero-length read, as opposed to EWOULDBLOCK,
 		   the remote end closed the connection. */
-		if (read_status == 0) {
-			omapi_disconnect (h, 0);
+		if (read_status == 0) 
+		{
+			omapi_disconnect(h, 0);
 			return ISC_R_SHUTTINGDOWN;
 		}
 #if defined (TRACING)
@@ -244,18 +256,20 @@ static isc_result_t omapi_connection_reader_trace (omapi_object_t *h,
 			}
 		}
 #endif
-		buffer -> tail += read_status;
-		c -> in_bytes += read_status;
-		if (buffer -> tail == sizeof buffer -> buf)
-			buffer -> tail = 0;
+		buffer->tail += read_status;
+		c->in_bytes += read_status;
+		if (buffer->tail == sizeof(buffer->buf))
+			buffer->tail = 0;
 		if (read_status < read_len)
 			break;
 		bytes_to_read -= read_status;
 	}
 
-	if (c -> bytes_needed <= c -> in_bytes) {
-		omapi_signal (h, "ready", c);
+	if (c->bytes_needed <= c->in_bytes) 
+	{
+		omapi_signal(h, "ready", c);
 	}
+	
 	return ISC_R_SUCCESS;
 }
 

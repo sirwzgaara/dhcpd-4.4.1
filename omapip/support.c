@@ -264,7 +264,17 @@ isc_result_t omapi_object_type_register (omapi_object_type_t **type,
 	return ISC_R_SUCCESS;
 }
 
-isc_result_t omapi_signal (omapi_object_t *handle, const char *name, ...)
+/*********************************************************************
+Func Name :   omapi_signal_in
+Date Created: 2018/07/17
+Author:  	  wangzhe
+Description:  给本层的最顶层发送信号
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution :     
+*********************************************************************/
+isc_result_t omapi_signal(omapi_object_t *handle, const char *name, ...)
 {
 	va_list ap;
 	omapi_object_t *outer;
@@ -286,13 +296,13 @@ isc_result_t omapi_signal (omapi_object_t *handle, const char *name, ...)
 Func Name :   omapi_signal_in
 Date Created: 2018/07/17
 Author:  	  wangzhe
-Description:  omapi对象信号入口函数
+Description:  调用本层的信号函数
 Input:	      
 Output:       
 Return:       isc_result_t
-Caution :     每个使用omapi的对象都嵌入omapi结构，通过此函数进行信号传递
+Caution :     
 *********************************************************************/
-isc_result_t omapi_signal_in (omapi_object_t *handle, const char *name, ...)
+isc_result_t omapi_signal_in(omapi_object_t *handle, const char *name, ...)
 {
 	va_list ap;
 	isc_result_t status;

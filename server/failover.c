@@ -499,6 +499,7 @@ isc_result_t dhcp_failover_link_signal
 	/* We get here because we requested that we be woken up after
            some number of bytes were read, and that number of bytes
            has in fact been read. */
+    /* 一个switch case的技巧，不break的话进入下一个case */
 	switch (link->state) 
 	{
 	    case dhcp_flink_start:
@@ -604,6 +605,7 @@ isc_result_t dhcp_failover_link_signal
 
 			/* If it's a connect message, try to associate it with a state object. */
 			/* XXX this should be authenticated! */
+			/* 若是CONNECT消息，挂接state到link的指针 */
 			if (link->imsg->type == FTM_CONNECT) 
 			{
 			    const char *errmsg;
@@ -710,6 +712,7 @@ isc_result_t dhcp_failover_link_signal
 
 			/* Once we have the entire message, and we've validated
 			   it as best we can here, pass it to the parent. */
+			/* 直接给state对象发message消息 */
 			omapi_signal((omapi_object_t *)link->state_object, "message", link);
 			link->state = dhcp_flink_message_length_wait;
 			if (link->imsg)
@@ -1263,7 +1266,7 @@ isc_result_t dhcp_failover_listen(omapi_object_t *h)
 Func Name :   dhcp_failover_listener_signal
 Date Created: 2018/07/10
 Author:  	  wangzhe
-Description:  监听事件处理接口
+Description:  failover_listener对象的信号函数
 Input:	      
 Output:       
 Return:       None
@@ -1283,7 +1286,6 @@ isc_result_t dhcp_failover_listener_signal
 	dhcp_failover_listener_t *p;
 	dhcp_failover_state_t *s, *state = (dhcp_failover_state_t *)0;
 
-	/* 只能传入listener对象 */
 	if (!o || o->type != dhcp_type_failover_listener)
 		return DHCP_R_INVALIDARG;
 	
@@ -1299,7 +1301,7 @@ isc_result_t dhcp_failover_listener_signal
 	}
 
 	/* 从ap中取出connection对象 */
-	c = va_arg (ap, omapi_connection_object_t *);
+	c = va_arg(ap, omapi_connection_object_t *);
 	if (!c || c->type != omapi_type_connection)
 		return DHCP_R_INVALIDARG;
 
@@ -1544,15 +1546,15 @@ isc_result_t dhcp_failover_state_signal
 				return ISC_R_SUCCESS;
 			}
 
+ 			/* 收到connect说明有link了，挂接state指针 */
 			dhcp_failover_link_reference(&state->link_to_peer, link, MDL);
 			status = (dhcp_failover_send_connectack((omapi_object_t *)link, state, 0, 0));
 			if (status != ISC_R_SUCCESS) 
 			{
-				dhcp_failover_link_dereference
-					(&state -> link_to_peer, MDL);
+				dhcp_failover_link_dereference(&state->link_to_peer, MDL);
 				log_info ("dhcp_failover_send_connectack: %s",
 					  isc_result_totext (status));
-				omapi_disconnect (link -> outer, 1);
+				omapi_disconnect(link->outer, 1);
 				return ISC_R_SUCCESS;
 			}
 			
@@ -1591,7 +1593,7 @@ isc_result_t dhcp_failover_state_signal
 					   (dhcp_failover_reject_reason_print
 					    (link -> imsg -> reject_reason)));
 				/* XXX print message from peer if peer sent message. */
-				omapi_disconnect (link -> outer, 1);
+				omapi_disconnect(link->outer, 1);
 				return ISC_R_SUCCESS;
 		    }
 
@@ -1607,9 +1609,9 @@ isc_result_t dhcp_failover_state_signal
 			      badconnectack:
 				log_error("Failover CONNECTACK from %s: %s",
 					  state->name, errmsg);
-				dhcp_failover_send_disconnect ((omapi_object_t *)link,
+				dhcp_failover_send_disconnect((omapi_object_t *)link,
 							       reason, errmsg);
-				omapi_disconnect (link -> outer, 0);
+				omapi_disconnect(link->outer, 0);
 				return ISC_R_SUCCESS;
 			}
 
@@ -1625,7 +1627,7 @@ isc_result_t dhcp_failover_state_signal
 					(cur_time < link->imsg->time &&
 					 link->imsg->time - cur_time > 60)) 
 			{
-			    errmsg = "time offset too large";
+				errmsg = "time offset too large";
 			    reason = FTR_TIMEMISMATCH;
 			    goto badconnectack;
 		    }
@@ -1646,16 +1648,17 @@ isc_result_t dhcp_failover_state_signal
 
 		    if (link->imsg->options_present & FTB_MAX_UNACKED)
 			    state->partner.max_flying_updates = link->imsg->max_unacked;
+			
 		    if (link->imsg->options_present & FTB_RECEIVE_TIMER)
 			    state->partner.max_response_delay = link->imsg->receive_timer;
+			
 #if defined (DEBUG_FAILOVER_CONTACT_TIMING)
 		    log_info ("add_timeout +%d %s",
 			      (int)state -> partner.max_response_delay / 3,
 			      "dhcp_failover_send_contact");
 #endif
 			/* 到超时时间的1/3，仍然没有报文交互，发送心跳报文 */
-		    tv.tv_sec = cur_time +
-			    (int)state->partner.max_response_delay / 3;
+		    tv.tv_sec = cur_time + (int)state->partner.max_response_delay / 3;
 		    tv.tv_usec = 0;
 		    add_timeout(&tv,
 				 dhcp_failover_send_contact, state,
@@ -1666,10 +1669,10 @@ isc_result_t dhcp_failover_state_signal
 			      (int)state -> me.max_response_delay,
 			      "dhcp_failover_timeout");
 #endif
-			/* 这个时间默认是20秒，超过这个时间超时 */
+			/* 这个值默认是20秒，超过20秒超时，断开连接 */
 		    tv.tv_sec = cur_time + (int)state->me.max_response_delay;
 		    tv.tv_usec = 0;
-		    add_timeout (&tv,
+		    add_timeout(&tv,
 				 dhcp_failover_timeout, state,
 				 (tvref_t)dhcp_failover_state_reference,
 				 (tvunref_t)dhcp_failover_state_dereference);
@@ -1734,6 +1737,7 @@ isc_result_t dhcp_failover_state_signal
 		    tv.tv_sec = cur_time +
 			    (int)state->me.max_response_delay;
 		    tv.tv_usec = 0;
+			/* 每次有报文到来，都重新设置这个定时器 */
 		    add_timeout(&tv,
 				 dhcp_failover_timeout, state,
 				 (tvref_t)dhcp_failover_state_reference,
@@ -4915,12 +4919,13 @@ isc_result_t dhcp_failover_send_state(dhcp_failover_state_t *state)
 # define FMA (char *)0, (unsigned *)0, 0
 #endif
 
-	if (!state || state -> type != dhcp_type_failover_state)
+	if (!state || state->type != dhcp_type_failover_state)
 		return DHCP_R_INVALIDARG;
-	link = state -> link_to_peer;
+	
+	link = state->link_to_peer;
 	if (!link ||
-	    !link -> outer ||
-	    link -> outer -> type != omapi_type_connection)
+	    !link->outer ||
+	    link->outer->type != omapi_type_connection)
 		return DHCP_R_INVALIDARG;
 
 	status = (dhcp_failover_put_message

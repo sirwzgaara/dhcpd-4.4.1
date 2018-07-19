@@ -502,8 +502,22 @@ isc_result_t omapi_listener_destroy (omapi_object_t *h,
 	return ISC_R_SUCCESS;
 }
 
-isc_result_t omapi_listener_signal_handler (omapi_object_t *h,
-					    const char *name, va_list ap)
+/*********************************************************************
+Func Name :   omapi_listener_signal_handler
+Date Created: 2018/07/19
+Author:  	  wangzhe
+Description:  omapi_listener对象的信号函数
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution : 	  本层收到信号直接透传到下一层
+*********************************************************************/
+isc_result_t omapi_listener_signal_handler
+(
+	omapi_object_t *h,
+	const char *name,
+	va_list ap
+)
 {
 	if (h->type != omapi_type_listener)
 		return DHCP_R_INVALIDARG;

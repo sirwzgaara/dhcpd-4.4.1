@@ -1131,10 +1131,14 @@ Description:  connection对象的信号函数
 Input:	      
 Output:       
 Return:       isc_result_t
-Caution : 
+Caution : 	  本层不处理，直接传入下一层
 *********************************************************************/
-isc_result_t omapi_connection_signal_handler (omapi_object_t *h,
-					      const char *name, va_list ap)
+isc_result_t omapi_connection_signal_handler 
+(
+	omapi_object_t *h,
+	const char *name, 
+	va_list ap
+)
 {
 	if (h->type != omapi_type_connection)
 		return DHCP_R_INVALIDARG;

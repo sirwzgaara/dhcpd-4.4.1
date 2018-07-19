@@ -55,9 +55,9 @@ typedef struct _omapi_buffer {
 } omapi_buffer_t;	
 
 #define BUFFER_BYTES_FREE(x)	\
-	((x) -> tail > (x) -> head \
-	  ? sizeof ((x) -> buf) - ((x) -> tail - (x) -> head) \
-	  : (x) -> head - (x) -> tail)
+	((x)->tail > (x)->head \
+	  ? sizeof ((x)->buf) - ((x)->tail - (x)->head) \
+	  : (x)->head - (x)->tail)
 
 #define BYTES_IN_BUFFER(x)	\
 	((x) -> tail > (x) -> head \
