@@ -87,7 +87,7 @@ isc_result_t readconf()
 	if (res != ISC_R_SUCCESS)
 		return (res);
 
-	return ldap_read_config ();
+	return ldap_read_config();
 #else
 	return (res);
 #endif
@@ -764,14 +764,18 @@ int parse_statement
 
 	      case POOL:
 		skip_token(&val, (unsigned *)0, cfile);
-		if (type == POOL_DECL) {
+		if (type == POOL_DECL) 
+		{
 			parse_warn (cfile, "pool declared within pool.");
 			skip_to_semi(cfile);
-		} else if (type != SUBNET_DECL && type != SHARED_NET_DECL) {
+		} 
+		else if (type != SUBNET_DECL && type != SHARED_NET_DECL) 
+		{
 			parse_warn (cfile, "pool declared outside of network");
 			skip_to_semi(cfile);
-		} else 
-			parse_pool_statement (cfile, group, type);
+		} 
+		else 
+			parse_pool_statement(cfile, group, type);
 
 		return declaration;
 
@@ -1768,11 +1772,14 @@ void parse_lease_id_format (struct parse *cfile)
  *			     the configuration includes an "after" clause
  */
 
-void get_permit(cfile, permit_head, is_allow, valid_from, valid_until)
-	struct parse *cfile;
-	struct permit **permit_head;
-	int is_allow;
-	TIME *valid_from, *valid_until;
+void get_permit
+(
+	struct parse *cfile,
+	struct permit **permit_head,
+	int is_allow,
+	TIME *valid_from, 
+	TIME *valid_until
+)
 {
 	enum dhcp_token token;
 	struct permit *permit;
@@ -1783,7 +1790,7 @@ void get_permit(cfile, permit_head, is_allow, valid_from, valid_until)
 	/* Create our permit structure */
 	permit = new_permit(MDL);
 	if (!permit)
-		log_fatal ("no memory for permit");
+		log_fatal("no memory for permit");
 
 	token = next_token(&val, NULL, cfile);
 	switch (token) {
@@ -1827,22 +1834,30 @@ void get_permit(cfile, permit_head, is_allow, valid_from, valid_until)
 		}
 		break;
 
+		/* allow members of "cm_option61" */
 	      case MEMBERS:
 		need_clients = 0;
-		if (next_token (&val, NULL, cfile) != OF) {
-			parse_warn (cfile, "expecting \"of\"");
-			skip_to_semi (cfile);
-			free_permit (permit, MDL);
+		if (next_token(&val, NULL, cfile) != OF) 
+		{
+			parse_warn(cfile, "expecting \"of\"");
+			skip_to_semi(cfile);
+			free_permit(permit, MDL);
+			
 			return;
 		}
-		if (next_token (&val, NULL, cfile) != STRING) {
-			parse_warn (cfile, "expecting class name.");
-			skip_to_semi (cfile);
-			free_permit (permit, MDL);
+		
+		if (next_token (&val, NULL, cfile) != STRING) 
+		{
+			parse_warn(cfile, "expecting class name.");
+			skip_to_semi(cfile);
+			free_permit(permit, MDL);
 			return;
+			
 		}
+		
 		permit->type = permit_class;
 		permit->class = NULL;
+		
 		find_class(&permit->class, val, MDL);
 		if (!permit->class)
 			parse_warn(cfile, "no such class: %s", val);
@@ -2439,9 +2454,16 @@ void parse_host_declaration
 	host_dereference (&host, MDL);
 }
 
-/* class-declaration :== STRING LBRACE parameters declarations RBRACE
-*/
-
+/*********************************************************************
+Func Name :   parse_class_declaration
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  解析class配置
+Input:	      
+Output:       
+Return:       
+Caution : 	  class-declaration :== STRING LBRACE parameters declarations RBRACE
+*********************************************************************/
 int parse_class_declaration
 (
 	struct class **cp,
@@ -2450,7 +2472,7 @@ int parse_class_declaration
 	int type
 )
 {
-	const char *val;
+	const char *val;			//class name
 	enum dhcp_token token;
 	struct class *class = NULL, *pc = NULL;
 	int declaration = 0;
@@ -2465,7 +2487,7 @@ int parse_class_declaration
 	int submatchedonce = 0;
 	unsigned code;
 
-	token = next_token (&val, NULL, cfile);
+	token = next_token(&val, NULL, cfile);
 	if (token != STRING) {
 		parse_warn (cfile, "Expecting class name");
 		skip_to_semi (cfile);
@@ -2479,11 +2501,14 @@ int parse_class_declaration
 	 * types (subclass, vendor or user class), the named class is a
 	 * reference to the parent class so its mandatory.
 	 */
-	if (pc && (type == CLASS_TYPE_CLASS)) {
+	if (pc && (type == CLASS_TYPE_CLASS))
+	{
 		class_reference(&class, pc, MDL);
 		new = 0;
 		class_dereference(&pc, MDL);
-	} else if (!pc && (type != CLASS_TYPE_CLASS)) {
+	}
+	else if (!pc && (type != CLASS_TYPE_CLASS))
+	{
 		parse_warn(cfile, "no class named %s", val);
 		skip_to_semi(cfile);
 		return 0;
@@ -2496,10 +2521,11 @@ int parse_class_declaration
 	   are turned into subclasses of the implicit classes, and the
 	   submatch expression of the implicit classes extracts the contents of
 	   the vendor class or user class. */
-	if ((type == CLASS_TYPE_VENDOR) || (type == CLASS_TYPE_USER)) {
-		data.len = strlen (val);
+	if ((type == CLASS_TYPE_VENDOR) || (type == CLASS_TYPE_USER)) 
+	{
+		data.len = strlen(val);
 		data.buffer = NULL;
-		if (!buffer_allocate (&data.buffer, data.len + 1, MDL))
+		if (!buffer_allocate(&data.buffer, data.len + 1, MDL))
 			log_fatal ("no memory for class name.");
 		data.data = &data.buffer -> data [0];
 		data.terminated = 1;
@@ -2507,49 +2533,62 @@ int parse_class_declaration
 		tname = (type == CLASS_TYPE_VENDOR) ?
 		  "implicit-vendor-class" : "implicit-user-class";
 
-	} else if (type == CLASS_TYPE_CLASS) {
+	} 
+	else if (type == CLASS_TYPE_CLASS) 
+	{
 		tname = val;
-	} else {
+	} 
+	else 
+	{
 		tname = NULL;
 	}
 
-	if (tname) {
-		name = dmalloc (strlen (tname) + 1, MDL);
+	if (tname) 
+	{
+		name = dmalloc(strlen(tname) + 1, MDL);
 		if (!name)
-			log_fatal ("No memory for class name %s.", tname);
-		strcpy (name, tname);
-	} else
+			log_fatal("No memory for class name %s.", tname);
+		strcpy(name, tname);
+	} 
+	else
 		name = NULL;
 
 	/* If this is a straight subclass, parse the hash string. */
-	if (type == CLASS_TYPE_SUBCLASS) {
+	if (type == CLASS_TYPE_SUBCLASS) 
+	{
 		token = peek_token (&val, NULL, cfile);
-		if (token == STRING) {
+		if (token == STRING) 
+		{
 			skip_token(&val, &data.len, cfile);
 			data.buffer = NULL;
 
-			if (!buffer_allocate (&data.buffer,
-					      data.len + 1, MDL)) {
+			if (!buffer_allocate(&data.buffer, data.len + 1, MDL)) 
+			{
 				if (pc)
-					class_dereference (&pc, MDL);
+					class_dereference(&pc, MDL);
 				
 				return 0;
 			}
+			
 			data.terminated = 1;
 			data.data = &data.buffer -> data [0];
-			memcpy ((char *)data.buffer -> data, val,
-				data.len + 1);
-		} else if (token == NUMBER_OR_NAME || token == NUMBER) {
-			memset (&data, 0, sizeof data);
-			if (!parse_cshl (&data, cfile)) {
+			memcpy((char *)data.buffer->data, val, data.len + 1);
+		} 
+		else if (token == NUMBER_OR_NAME || token == NUMBER) 
+		{
+			memset(&data, 0, sizeof data);
+			if (!parse_cshl(&data, cfile))
+			{
 				if (pc)
-					class_dereference (&pc, MDL);
+					class_dereference(&pc, MDL);
 				return 0;
 			}
-		} else {
+		} 
+		else 
+		{
 			parse_warn (cfile, "Expecting string or hex list.");
 			if (pc)
-				class_dereference (&pc, MDL);
+				class_dereference(&pc, MDL);
 			return 0;
 		}
 	}
@@ -2557,57 +2596,69 @@ int parse_class_declaration
 	/* See if there's already a class in the hash table matching the
 	   hash data. */
 	if (type != CLASS_TYPE_CLASS)
-		class_hash_lookup (&class, pc -> hash,
+		class_hash_lookup(&class, pc->hash,
 				   (const char *)data.data, data.len, MDL);
 
 	/* If we didn't find an existing class, allocate a new one. */
-	if (!class) {
+	if (!class) 
+	{
 		/* Allocate the class structure... */
-		if (type == CLASS_TYPE_SUBCLASS) {
-			status = subclass_allocate (&class, MDL);
-		} else {
-			status = class_allocate (&class, MDL);
+		if (type == CLASS_TYPE_SUBCLASS) 
+		{
+			status = subclass_allocate(&class, MDL);
+		} 
+		else 
+		{
+			status = class_allocate(&class, MDL);
 		}
-		if (pc) {
-			group_reference (&class -> group, pc -> group, MDL);
-			class_reference (&class -> superclass, pc, MDL);
-			class -> lease_limit = pc -> lease_limit;
-			if (class -> lease_limit) {
-				class -> billed_leases =
-					dmalloc (class -> lease_limit *
-						 sizeof (struct lease *), MDL);
-				if (!class -> billed_leases)
-					log_fatal ("no memory for billing");
-				memset (class -> billed_leases, 0,
-					(class -> lease_limit *
-					 sizeof (struct lease *)));
+		
+		if (pc) 
+		{
+			group_reference(&class->group, pc->group, MDL);
+			class_reference(&class->superclass, pc, MDL);
+			class->lease_limit = pc->lease_limit;
+			
+			if (class->lease_limit) 
+			{
+				class->billed_leases =
+					dmalloc(class->lease_limit * sizeof (struct lease *), MDL);
+				if (!class->billed_leases)
+					log_fatal("no memory for billing");
+				
+				memset(class->billed_leases, 0, (class->lease_limit *
+					 sizeof(struct lease *)));
 			}
-			data_string_copy (&class -> hash_string, &data, MDL);
-			if (!pc -> hash &&
-			    !class_new_hash (&pc->hash, SCLASS_HASH_SIZE, MDL))
-				log_fatal ("No memory for subclass hash.");
-			class_hash_add (pc -> hash,
-					(const char *)class -> hash_string.data,
-					class -> hash_string.len,
+			
+			data_string_copy(&class->hash_string, &data, MDL);
+			if (!pc->hash &&
+			    !class_new_hash(&pc->hash, SCLASS_HASH_SIZE, MDL))
+				log_fatal("No memory for subclass hash.");
+			class_hash_add(pc->hash,
+					(const char *)class->hash_string.data,
+					class->hash_string.len,
 					(void *)class, MDL);
-		} else {
+		}
+		else 
+		{
 			if (class->group)
 				group_dereference(&class->group, MDL);
-			if (!clone_group (&class -> group, group, MDL))
-				log_fatal ("no memory to clone class group.");
+			
+			if (!clone_group(&class->group, group, MDL))
+				log_fatal("no memory to clone class group.");
 		}
 
 		/* If this is an implicit vendor or user class, add a
 		   statement that causes the vendor or user class ID to
 		   be sent back in the reply. */
-		if (type == CLASS_TYPE_VENDOR || type == CLASS_TYPE_USER) {
+		if (type == CLASS_TYPE_VENDOR || type == CLASS_TYPE_USER) 
+		{
 			stmt = NULL;
-			if (!executable_statement_allocate (&stmt, MDL))
+			if (!executable_statement_allocate(&stmt, MDL))
 				log_fatal ("no memory for class statement.");
-			stmt -> op = supersede_option_statement;
-			if (option_cache_allocate (&stmt -> data.option,
-						   MDL)) {
-				stmt -> data.option -> data = data;
+			stmt->op = supersede_option_statement;
+			if (option_cache_allocate(&stmt->data.option, MDL)) 
+			{
+				stmt->data.option->data = data;
 				code = (type == CLASS_TYPE_VENDOR)
 					? DHO_VENDOR_CLASS_IDENTIFIER
 					: DHO_USER_CLASS;
@@ -2616,7 +2667,7 @@ int parse_class_declaration
 							dhcp_universe.code_hash,
 							&code, 0, MDL);
 			}
-			class -> statements = stmt;
+			class->statements = stmt;
 		}
 
 		/* Save the name, if there is one. */
@@ -2629,7 +2680,8 @@ int parse_class_declaration
 		data_string_forget(&data, MDL);
 
 	/* Spawned classes don't have to have their own settings. */
-	if (class -> superclass) {
+	if (class->superclass) 
+	{
 		token = peek_token (&val, NULL, cfile);
 		if (token == SEMI) {
 			skip_token(&val, NULL, cfile);
@@ -2647,10 +2699,11 @@ int parse_class_declaration
 
 	}
 
-	if (!parse_lbrace (cfile)) {
-		class_dereference (&class, MDL);
+	if (!parse_lbrace(cfile)) 
+	{
+		class_dereference(&class, MDL);
 		if (pc)
-			class_dereference (&pc, MDL);
+			class_dereference(&pc, MDL);
 		return 0;
 	}
 
@@ -2675,42 +2728,54 @@ int parse_class_declaration
 			if (!parse_semi (cfile))
 				break;
 			continue;
-		} else if (token == MATCH) {
-			if (pc) {
-				parse_warn (cfile,
-					    "invalid match in subclass.");
-				skip_to_semi (cfile);
+		}
+		/* match if ((option dhcp-client-identifier = "xxxxxxx")); */
+		else if (token == MATCH) 
+		{
+			if (pc) 
+			{
+				parse_warn (cfile, "invalid match in subclass.");
+				skip_to_semi(cfile);
 				break;
 			}
+			
 			skip_token(&val, NULL, cfile);
-			token = peek_token (&val, NULL, cfile);
+			token = peek_token(&val, NULL, cfile);		
 			if (token != IF)
 				goto submatch;
+			
 			skip_token(&val, NULL, cfile);
-			if (matchedonce) {
+			if (matchedonce) 
+			{
 				parse_warn(cfile, "A class may only have "
 						  "one 'match if' clause.");
 				skip_to_semi(cfile);
 				break;
 			}
+			
 			matchedonce = 1;
+			
 			if (class->expr)
 				expression_dereference(&class->expr, MDL);
-			if (!parse_boolean_expression (&class->expr, cfile,
-						       &lose)) {
-				if (!lose) {
-					parse_warn (cfile,
-						    "expecting boolean expr.");
+			
+			if (!parse_boolean_expression(&class->expr, cfile, &lose)) 
+			{
+				if (!lose) 
+				{
+					parse_warn(cfile, "expecting boolean expr.");
 					skip_to_semi (cfile);
 				}
-			} else {
+			} 
+			else 
+			{
 #if defined (DEBUG_EXPRESSION_PARSE)
 				print_expression ("class match",
 						  class -> expr);
 #endif
-				parse_semi (cfile);
+				parse_semi(cfile);
 			}
-		} else if (token == SPAWN) {
+		}
+		else if (token == SPAWN) {
 			skip_token(&val, NULL, cfile);
 			if (pc) {
 				parse_warn (cfile,
@@ -2751,7 +2816,9 @@ int parse_class_declaration
 #endif
 				parse_semi (cfile);
 			}
-		} else if (token == LEASE) {
+		}
+		else if (token == LEASE) 
+		{
 			skip_token(&val, NULL, cfile);
 			token = next_token (&val, NULL, cfile);
 			if (token != LIMIT) {
@@ -2780,44 +2847,56 @@ int parse_class_declaration
 				 sizeof (struct lease *)));
 			have_billing_classes = 1;
 			parse_semi (cfile);
-		} else {
+		}
+		else 
+		{
 			declaration = parse_statement (cfile, class -> group,
 						       CLASS_DECL, NULL,
 						       declaration);
 		}
 	} while (1);
 
-	if (class->flags & CLASS_DECL_DELETED) {
-		if (type == CLASS_TYPE_CLASS) {
+	if (class->flags & CLASS_DECL_DELETED) 
+	{
+		if (type == CLASS_TYPE_CLASS) 
+		{
 			struct class *theclass = NULL;
 		
 			status = find_class(&theclass, class->name, MDL);
-			if (status == ISC_R_SUCCESS) {
+			if (status == ISC_R_SUCCESS) 
+			{
 				delete_class(theclass, 0);
 				class_dereference(&theclass, MDL);
 			}
-		} else {
+		} 
+		else 
+		{
 			class_hash_delete(pc->hash,
 					  (char *)class->hash_string.data,
 					  class->hash_string.len, MDL);
 		}
-	} else if (type == CLASS_TYPE_CLASS && new) {
-		if (!collections -> classes)
-			class_reference (&collections -> classes, class, MDL);
-		else {
+	}
+	else if (type == CLASS_TYPE_CLASS && new) 
+	{
+		if (!collections->classes)
+			class_reference(&collections->classes, class, MDL);
+		else 
+		{
+			/* class是加入链表尾 */
 			struct class *c;
-			for (c = collections -> classes;
-			     c -> nic; c = c -> nic)
+			for (c = collections->classes; c->nic; c = c->nic)
 				;
-			class_reference (&c -> nic, class, MDL);
+			class_reference(&c->nic, class, MDL);
 		}
 	}
 
 	if (cp)				/* should always be 0??? */
-		status = class_reference (cp, class, MDL);
-	class_dereference (&class, MDL);
+		status = class_reference(cp, class, MDL);
+	class_dereference(&class, MDL);
+	
 	if (pc)
 		class_dereference (&pc, MDL);
+	
 	return cp ? (status == ISC_R_SUCCESS) : 1;
 }
 

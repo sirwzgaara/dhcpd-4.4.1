@@ -440,6 +440,16 @@ void relinquish_free_pairs ()
 
 struct expression *free_expressions;
 
+/*********************************************************************
+Func Name :   expression_allocate
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  给一个表达式分配内存
+Input:	      
+Output:       
+Return:       int
+Caution : 	  
+*********************************************************************/
 int expression_allocate
 (
 	struct expression **cptr,
@@ -449,17 +459,21 @@ int expression_allocate
 {
 	struct expression *rval;
 
-	if (free_expressions) {
+	if (free_expressions) 
+	{
 		rval = free_expressions;
-		free_expressions = rval -> data.not;
-		dmalloc_reuse (rval, file, line, 1);
-	} else {
-		rval = dmalloc (sizeof (struct expression), file, line);
+		free_expressions = rval->data.not;
+		dmalloc_reuse(rval, file, line, 1);
+	} 
+	else 
+	{
+		rval = dmalloc(sizeof(struct expression), file, line);
 		if (!rval)
 			return 0;
 	}
-	memset (rval, 0, sizeof *rval);
-	return expression_reference (cptr, rval, file, line);
+	memset(rval, 0, sizeof *rval);
+	
+	return expression_reference(cptr, rval, file, line);
 }
 
 int expression_reference (ptr, src, file, line)

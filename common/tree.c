@@ -3250,10 +3250,13 @@ enum expression_context expression_context (struct expression *expr)
 {
 	if (is_data_expression (expr))
 		return context_data;
+	
 	if (is_numeric_expression (expr))
 		return context_numeric;
+	
 	if (is_boolean_expression (expr))
 		return context_boolean;
+	
 	return context_any;
 }
 

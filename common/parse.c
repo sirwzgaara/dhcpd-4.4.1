@@ -1168,19 +1168,17 @@ parse_date(cfile)
        return(guess);
 }
 
-
-
 /*
  * option-name :== IDENTIFIER |
  		   IDENTIFIER . IDENTIFIER
  */
-
-isc_result_t
-parse_option_name (cfile, allocate, known, opt)
-	struct parse *cfile;
-	int allocate;
-	int *known;
-	struct option **opt;
+isc_result_t parse_option_name
+(
+	struct parse *cfile,
+	int allocate,
+	int *known,
+	struct option **opt
+)
 {
 	const char *val;
 	enum dhcp_token token;
@@ -1192,42 +1190,51 @@ parse_option_name (cfile, allocate, known, opt)
 	if (opt == NULL)
 		return DHCP_R_INVALIDARG;
 
-	token = next_token (&val, (unsigned *)0, cfile);
-	if (!is_identifier (token)) {
-		parse_warn (cfile,
-			    "expecting identifier after option keyword.");
+	token = next_token(&val, (unsigned *)0, cfile);
+	if (!is_identifier(token)) 
+	{
+		parse_warn(cfile, "expecting identifier after option keyword.");
 		if (token != SEMI)
-			skip_to_semi (cfile);
+			skip_to_semi(cfile);
+		
 		return DHCP_R_BADPARSE;
 	}
-	uname = dmalloc (strlen (val) + 1, MDL);
+	
+	uname = dmalloc(strlen(val) + 1, MDL);
 	if (!uname)
-		log_fatal ("no memory for uname information.");
-	strcpy (uname, val);
-	token = peek_token (&val, (unsigned *)0, cfile);
-	if (token == DOT) {
+		log_fatal("no memory for uname information.");
+	
+	strcpy(uname, val);
+	token = peek_token(&val, (unsigned *)0, cfile);
+	if (token == DOT) 
+	{
 		/* Go ahead and take the DOT token... */
 		skip_token(&val, (unsigned *)0, cfile);
 
 		/* The next token should be an identifier... */
-		token = next_token (&val, (unsigned *)0, cfile);
-		if (!is_identifier (token)) {
-			parse_warn (cfile, "expecting identifier after '.'");
+		token = next_token(&val, (unsigned *)0, cfile);
+		if (!is_identifier(token)) 
+		{
+			parse_warn(cfile, "expecting identifier after '.'");
 			if (token != SEMI)
-				skip_to_semi (cfile);
+				skip_to_semi(cfile);
 			return DHCP_R_BADPARSE;
 		}
 
 		/* Look up the option name hash table for the specified
 		   uname. */
 		universe = (struct universe *)0;
-		if (!universe_hash_lookup (&universe, universe_hash,
-					   uname, 0, MDL)) {
-			parse_warn (cfile, "no option space named %s.", uname);
-			skip_to_semi (cfile);
+		if (!universe_hash_lookup(&universe, universe_hash,
+					   uname, 0, MDL)) 
+		{
+			parse_warn(cfile, "no option space named %s.", uname);
+			skip_to_semi(cfile);
+			
 			return ISC_R_NOTFOUND;
 		}
-	} else {
+	} 
+	else 
+	{
 		/* Use the default hash table, which contains all the
 		   standard dhcp option names. */
 		val = uname;
@@ -1239,7 +1246,8 @@ parse_option_name (cfile, allocate, known, opt)
 	option = *opt;
 
 	/* If we didn't get an option structure, it's an undefined option. */
-	if (option) {
+	if (option) 
+	{
 		if (known)
 			*known = 1;
 	/* If the option name is of the form unknown-[decimal], use
@@ -1248,8 +1256,10 @@ parse_option_name (cfile, allocate, known, opt)
 	 * support legacy use of unknown options in config files or
 	 * lease databases.
 	 */
-	} else if (strncasecmp(val, "unknown-", 8) == 0) {
-		code = atoi(val+8);
+	} 
+	else if (strncasecmp(val, "unknown-", 8) == 0) 
+	{
+		code = atoi(val + 8);
 
 		/* Option code 0 is always illegal for us, thanks
 		 * to the option decoder.
@@ -1270,8 +1280,7 @@ parse_option_name (cfile, allocate, known, opt)
 		if (known)
 			*known = 1;
 
-		option_code_hash_lookup(opt, universe->code_hash,
-					&code, 0, MDL);
+		option_code_hash_lookup(opt, universe->code_hash, &code, 0, MDL);
 		option = *opt;
 
 		/* If we did not find an option of that code,
@@ -1295,20 +1304,25 @@ parse_option_name (cfile, allocate, known, opt)
 	 * an option structure and return it for the parent to
 	 * decide.
 	 */
-	} else if (allocate) {
+	} 
+	else if (allocate) 
+	{
 		option = new_option(val, MDL);
-		option -> universe = universe;
+		option->universe = universe;
 		option_reference(opt, option, MDL);
-	} else {
-		parse_warn(cfile, "no option named %s in space %s",
-			   val, universe->name);
+	}
+	else 
+	{
+		parse_warn(cfile, "no option named %s in space %s", val, universe->name);
 		skip_to_semi (cfile);
 		dfree(uname, MDL);
+		
 		return ISC_R_NOTFOUND;
 	}
 
 	/* Free the initial identifier token. */
-	dfree (uname, MDL);
+	dfree(uname, MDL);
+	
 	return ISC_R_SUCCESS;
 }
 
@@ -3439,8 +3453,15 @@ int parse_if_statement (result, cfile, lose)
 	return 1;
 }
 
-/*
- * boolean_expression :== CHECK STRING |
+/*********************************************************************
+Func Name :   parse_boolean_expression
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  解析配置文件中bool类型表达式
+Input:	      
+Output:       
+Return:       
+Caution : 	  boolean_expression :== CHECK STRING |
  *  			  NOT boolean-expression |
  *			  data-expression EQUAL data-expression |
  *			  data-expression BANG EQUAL data-expression |
@@ -3448,26 +3469,30 @@ int parse_if_statement (result, cfile, lose)
  *			  boolean-expression AND boolean-expression |
  *			  boolean-expression OR boolean-expression
  *			  EXISTS OPTION-NAME
- */
-   			  
-int parse_boolean_expression (expr, cfile, lose)
-	struct expression **expr;
-	struct parse *cfile;
-	int *lose;
+*********************************************************************/   			  
+int parse_boolean_expression
+(
+	struct expression **expr,
+	struct parse *cfile,
+	int *lose
+)
 {
 	/* Parse an expression... */
-	if (!parse_expression (expr, cfile, lose, context_boolean,
+	if (!parse_expression(expr, cfile, lose, context_boolean,
 			       (struct expression **)0, expr_none))
 		return 0;
 
-	if (!is_boolean_expression (*expr) &&
-	    (*expr) -> op != expr_variable_reference &&
-	    (*expr) -> op != expr_funcall) {
-		parse_warn (cfile, "Expecting a boolean expression.");
+	if (!is_boolean_expression(*expr) &&
+	    (*expr)->op != expr_variable_reference &&
+	    (*expr)->op != expr_funcall) 
+	{
+		parse_warn(cfile, "Expecting a boolean expression.");
 		*lose = 1;
-		expression_dereference (expr, MDL);
+		expression_dereference(expr, MDL);
+		
 		return 0;
 	}
+	
 	return 1;
 }
 
@@ -3565,13 +3590,23 @@ int parse_numeric_expression (expr, cfile, lose)
 	return 1;
 }
 
-/* Parse a subexpression that does not contain a binary operator. */
-
-int parse_non_binary (expr, cfile, lose, context)
-	struct expression **expr;
-	struct parse *cfile;
-	int *lose;
-	enum expression_context context;
+/*********************************************************************
+Func Name :   parse_non_binary
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  Parse a subexpression that does not contain a binary operator.
+Input:	      
+Output:       
+Return:       
+Caution : 	  解析一个没有二进制运算符的表达式 
+*********************************************************************/
+int parse_non_binary
+(
+	struct expression **expr,
+	struct parse *cfile,
+	int *lose,
+	enum expression_context context
+)
 {
 	enum dhcp_token token;
 	const char *val;
@@ -3582,10 +3617,11 @@ int parse_non_binary (expr, cfile, lose, context)
 	isc_result_t status;
 	unsigned len;
 
-	token = peek_token (&val, (unsigned *)0, cfile);
+	token = peek_token(&val, (unsigned *)0, cfile);
 
 	/* Check for unary operators... */
-	switch (token) {
+	switch (token) 
+	{
 	      case CHECK:
 		skip_token(&val, (unsigned *)0, cfile);
 		token = next_token (&val, (unsigned *)0, cfile);
@@ -3967,22 +4003,23 @@ int parse_non_binary (expr, cfile, lose, context)
 			goto norparen;
 		break;
 
+		/* option dhcp-client-identifier = "xxxxxxxxxx" */
 	      case OPTION:
 	      case CONFIG_OPTION:
-		if (!expression_allocate (expr, MDL))
-			log_fatal ("can't allocate expression");
-		(*expr) -> op = (token == OPTION
+		if (!expression_allocate(expr, MDL))
+			log_fatal("can't allocate expression");
+		(*expr)->op = (token == OPTION
 				 ? expr_option
 				 : expr_config_option);
 		skip_token(&val, (unsigned *)0, cfile);
 		known = 0;
 		/* Pass reference directly to expression structure. */
-		status = parse_option_name(cfile, 0, &known,
-					   &(*expr)->data.option);
-		if (status != ISC_R_SUCCESS ||
-		    (*expr)->data.option == NULL) {
+		status = parse_option_name(cfile, 0, &known, &(*expr)->data.option);	
+		if (status != ISC_R_SUCCESS || (*expr)->data.option == NULL) 
+		{
 			*lose = 1;
-			expression_dereference (expr, MDL);
+			expression_dereference(expr, MDL);
+			
 			return 0;
 		}
 		break;
@@ -4474,8 +4511,16 @@ int parse_non_binary (expr, cfile, lose, context)
 	return 1;
 }
 
-/* Parse an expression. */
-
+/*********************************************************************
+Func Name :   parse_expression
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  Parse an expression
+Input:	      
+Output:       
+Return:       
+Caution : 	  解析配置文件中的表达式
+*********************************************************************/
 int parse_expression
 (
 	struct expression **expr,
@@ -4496,34 +4541,38 @@ int parse_expression
 		rhs_context = context_any;
 
 	/* Consume the left hand side we were passed. */
-	if (plhs) {
-		expression_reference (&lhs, *plhs, MDL);
-		expression_dereference (plhs, MDL);
+	if (plhs) 
+	{
+		expression_reference(&lhs, *plhs, MDL);
+		expression_dereference(plhs, MDL);
 	}
 
       new_rhs:
-	if (!parse_non_binary (&rhs, cfile, lose, context)) {
+	if (!parse_non_binary(&rhs, cfile, lose, context)) 
+	{
 		/* If we already have a left-hand side, then it's not
 		   okay for there not to be a right-hand side here, so
 		   we need to flag it as an error. */
-		if (lhs) {
-			if (!*lose) {
-				parse_warn (cfile,
-					    "expecting right-hand side.");
+		if (lhs) 
+		{
+			if (!*lose) 
+			{
+				parse_warn(cfile, "expecting right-hand side.");
 				*lose = 1;
-				skip_to_semi (cfile);
+				skip_to_semi(cfile);
 			}
-			expression_dereference (&lhs, MDL);
+			expression_dereference(&lhs, MDL);
 		}
+		
 		return 0;
 	}
 
 	/* At this point, rhs contains either an entire subexpression,
 	   or at least a left-hand-side.   If we do not see a binary token
 	   as the next token, we're done with the expression. */
-
-	token = peek_token (&val, (unsigned *)0, cfile);
-	switch (token) {
+	token = peek_token(&val, (unsigned *)0, cfile);
+	switch (token) 
+	{
 	      case BANG:
 		skip_token(&val, (unsigned *)0, cfile);
 		token = peek_token (&val, (unsigned *)0, cfile);
@@ -4541,7 +4590,7 @@ int parse_expression
 
 	      case EQUAL:
 		next_op = expr_equal;
-		context = expression_context (rhs);
+		context = expression_context(rhs);
 		break;
 
 	      case TILDE:
@@ -4628,13 +4677,16 @@ int parse_expression
 	}
 
 	/* If we have no lhs yet, we just parsed it. */
-	if (!lhs) {
+	if (!lhs) 
+	{
 		/* If there was no operator following what we just parsed,
 		   then we're done - return it. */
-		if (next_op == expr_none) {
+		if (next_op == expr_none) 
+		{
 			*expr = rhs;
 			return 1;
 		}
+		
 		lhs = rhs;
 		rhs = (struct expression *)0;
 		binop = next_op;
@@ -4648,8 +4700,8 @@ int parse_expression
 	 * recurse.
 	 */
 	if (binop != expr_none && next_op != expr_none &&
-	    op_precedence (binop, next_op) < 0) {
-
+	    	op_precedence (binop, next_op) < 0) 
+	{
 		/* Eat the subexpression operator token, which we pass to
 		 * parse_expression...we only peek()'d earlier.
 		 */
@@ -4670,100 +4722,108 @@ int parse_expression
 		next_op = expr_none;
 	}
 
-	if (binop != expr_none) {
-	  rhs_context = expression_context(rhs);
-	  lhs_context = expression_context(lhs);
+	if (binop != expr_none) 
+	{
+		rhs_context = expression_context(rhs);
+		lhs_context = expression_context(lhs);
 
-	  if ((rhs_context != context_any) && (lhs_context != context_any) &&
-			(rhs_context != lhs_context)) {
-	    parse_warn (cfile, "illegal expression relating different types");
-	    skip_to_semi (cfile);
-	    expression_dereference (&rhs, MDL);
-	    expression_dereference (&lhs, MDL);
-	    *lose = 1;
-	    return 0;
-	  }
-
-	  switch(binop) {
-	    case expr_not_equal:
-	    case expr_equal:
-		if ((rhs_context != context_data_or_numeric) &&
-		    (rhs_context != context_data) &&
-		    (rhs_context != context_numeric) &&
-		    (rhs_context != context_any)) {
-			parse_warn (cfile, "expecting data/numeric expression");
-			skip_to_semi (cfile);
-			expression_dereference (&rhs, MDL);
-			*lose = 1;
-			return 0;
-		}
-		break;
-
-	    case expr_regex_match:
-#ifdef HAVE_REGEX_H
-		if (expression_context(rhs) != context_data) {
-			parse_warn(cfile, "expecting data expression");
+		if ((rhs_context != context_any) && (lhs_context != context_any) &&
+			(rhs_context != lhs_context)) 
+		{
+			parse_warn(cfile, "illegal expression relating different types");
 			skip_to_semi(cfile);
 			expression_dereference(&rhs, MDL);
+			expression_dereference(&lhs, MDL);
 			*lose = 1;
+			
 			return 0;
 		}
+
+	    switch(binop) 
+		{
+		    case expr_not_equal:
+		    case expr_equal:
+				if ((rhs_context != context_data_or_numeric) &&
+				    (rhs_context != context_data) &&
+				    (rhs_context != context_numeric) &&
+				    (rhs_context != context_any)) 
+				{
+					parse_warn (cfile, "expecting data/numeric expression");
+					skip_to_semi (cfile);
+					expression_dereference (&rhs, MDL);
+					*lose = 1;
+					return 0;
+				}
+				break;
+
+		    case expr_regex_match:
+#ifdef HAVE_REGEX_H
+				if (expression_context(rhs) != context_data) {
+					parse_warn(cfile, "expecting data expression");
+					skip_to_semi(cfile);
+					expression_dereference(&rhs, MDL);
+					*lose = 1;
+					return 0;
+				}
 #else
-		/* It should not be possible to attempt to parse the right
-		 * hand side of an operator there is no support for.
-		 */
-		log_fatal("Impossible condition at %s:%d.", MDL);
+				/* It should not be possible to attempt to parse the right
+				 * hand side of an operator there is no support for.
+				 */
+				log_fatal("Impossible condition at %s:%d.", MDL);
 #endif
-		break;
+				break;
 
-	    case expr_and:
-	    case expr_or:
-		if ((rhs_context != context_boolean) &&
-		    (rhs_context != context_any)) {
-			parse_warn (cfile, "expecting boolean expressions");
-			skip_to_semi (cfile);
-			expression_dereference (&rhs, MDL);
-			*lose = 1;
-			return 0;
-		}
-		break;
+		    case expr_and:
+		    case expr_or:
+				if ((rhs_context != context_boolean) &&
+				    (rhs_context != context_any)) {
+					parse_warn (cfile, "expecting boolean expressions");
+					skip_to_semi (cfile);
+					expression_dereference (&rhs, MDL);
+					*lose = 1;
+					return 0;
+				}
+			break;
 
-	    case expr_add:
-	    case expr_subtract:
-	    case expr_divide:
-	    case expr_multiply:
-	    case expr_remainder:
-	    case expr_binary_and:
-	    case expr_binary_or:
-	    case expr_binary_xor:
-		if ((rhs_context != context_numeric) &&
-		    (rhs_context != context_any)) {
-			parse_warn (cfile, "expecting numeric expressions");
-                        skip_to_semi (cfile);
-                        expression_dereference (&rhs, MDL);
-                        *lose = 1;
-                        return 0;
-		}
-		break;
+		    case expr_add:
+		    case expr_subtract:
+		    case expr_divide:
+		    case expr_multiply:
+		    case expr_remainder:
+		    case expr_binary_and:
+		    case expr_binary_or:
+		    case expr_binary_xor:
+				if ((rhs_context != context_numeric) &&
+				    (rhs_context != context_any)) {
+					parse_warn (cfile, "expecting numeric expressions");
+		                        skip_to_semi (cfile);
+		                        expression_dereference (&rhs, MDL);
+		                        *lose = 1;
+		                        return 0;
+				}
+				break;
 
-	    default:
-		break;
-	  }
+		    default:
+			break;
+	  	}
 	}
 
 	/* Now, if we didn't find a binary operator, we're done parsing
 	   this subexpression, so combine it with the preceding binary
 	   operator and return the result. */
-	if (next_op == expr_none) {
-		if (!expression_allocate (expr, MDL))
-			log_fatal ("Can't allocate expression!");
+	if (next_op == expr_none) 
+	{
+		if (!expression_allocate(expr, MDL))
+			log_fatal("Can't allocate expression!");
 
-		(*expr) -> op = binop;
+		(*expr)->op = binop;
 		/* All the binary operators' data union members
 		   are the same, so we'll cheat and use the member
 		   for the equals operator. */
-		(*expr) -> data.equal [0] = lhs;
-		(*expr) -> data.equal [1] = rhs;
+		 /* 保存等式左右两边 */
+		(*expr)->data.equal[0] = lhs;
+		(*expr)->data.equal[1] = rhs;
+		
 		return 1;
 	}
 

@@ -104,335 +104,467 @@ _ldap_sasl_interact(LDAP *ld, unsigned flags, void *defaults, void *sin) ;
 
 static struct ldap_config_stack *ldap_stack = NULL;
 
-typedef struct ldap_dn_node {
+typedef struct ldap_dn_node 
+{
     struct ldap_dn_node *next;
     size_t refs;
     char *dn;
-} ldap_dn_node;
+}ldap_dn_node;
 
 static ldap_dn_node *ldap_service_dn_head = NULL;
 static ldap_dn_node *ldap_service_dn_tail = NULL;
 
 static int ldap_read_function (struct parse *cfile);
 
-static struct parse *
-x_parser_init(const char *name)
+/*********************************************************************
+Func Name :   x_parser_init
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  初始化一个文件解析结构
+Input:	      
+Output:       
+Return:       struct parse *
+Caution : 
+*********************************************************************/
+static struct parse * x_parser_init(const char *name)
 {
-  struct parse *cfile;
-  isc_result_t res;
-  char *inbuf;
+	struct parse *cfile;
+	isc_result_t res;
+	char *inbuf;
 
-  inbuf = dmalloc (LDAP_BUFFER_SIZE, MDL);
-  if (inbuf == NULL)
-    return NULL;
+	inbuf = dmalloc(LDAP_BUFFER_SIZE, MDL);
+	if (inbuf == NULL)
+		return NULL;
 
-  cfile = (struct parse *) NULL;
-  res = new_parse (&cfile, -1, inbuf, LDAP_BUFFER_SIZE, name, 0);
-  if (res != ISC_R_SUCCESS)
-    {
-      dfree(inbuf, MDL);
-      return NULL;
-    }
-  /* the buffer is still empty */
-  cfile->bufsiz = LDAP_BUFFER_SIZE;
-  cfile->buflen = cfile->bufix = 0;
-  /* attach ldap read function */
-  cfile->read_function = ldap_read_function;
-  return cfile;
+	cfile = (struct parse *) NULL;
+	res = new_parse(&cfile, -1, inbuf, LDAP_BUFFER_SIZE, name, 0);
+	if (res != ISC_R_SUCCESS)
+	{
+		dfree(inbuf, MDL);
+		return NULL;
+	}
+	
+	/* the buffer is still empty */
+	cfile->bufsiz = LDAP_BUFFER_SIZE;			//8192
+	cfile->buflen = cfile->bufix = 0;
+	/* attach ldap read function */
+	cfile->read_function = ldap_read_function;
+	
+	return cfile;
 }
 
-static isc_result_t
-x_parser_free(struct parse **cfile)
+/*********************************************************************
+Func Name :   x_parser_free
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  结束解析，释放资源
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution : 
+*********************************************************************/
+static isc_result_t x_parser_free(struct parse **cfile)
 {
-  if (cfile && *cfile)
-    {
-      if ((*cfile)->inbuf)
-          dfree((*cfile)->inbuf, MDL);
-      (*cfile)->inbuf = NULL;
-      (*cfile)->bufsiz = 0;
-      return end_parse(cfile);
-    }
-  return ISC_R_SUCCESS;
+	if (cfile && *cfile)
+	{
+		if ((*cfile)->inbuf)
+			dfree((*cfile)->inbuf, MDL);
+		
+		(*cfile)->inbuf = NULL;
+		(*cfile)->bufsiz = 0;
+		
+		return end_parse(cfile);
+	}
+	
+	return ISC_R_SUCCESS;
 }
 
-static int
-x_parser_resize(struct parse *cfile, size_t len)
+/*********************************************************************
+Func Name :   x_parser_resize
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  重新设置文件解析缓冲区大小
+Input:	      
+Output:       
+Return:       int
+Caution : 	  保证重新设置的大小是8192字节的倍数
+*********************************************************************/
+static int x_parser_resize(struct parse *cfile, size_t len)
 {
-  size_t size;
-  char * temp;
+	size_t size;
+	char * temp;
 
-  /* grow by len rounded up at LDAP_BUFFER_SIZE */
-  size = cfile->bufsiz + (len | (LDAP_BUFFER_SIZE-1)) + 1;
+	/* grow by len rounded up at LDAP_BUFFER_SIZE */
+	/* 保证加的是8192的倍数 */
+	size = cfile->bufsiz + (len | (LDAP_BUFFER_SIZE - 1)) + 1;
 
-  /* realloc would be better, but there isn't any */
-  if ((temp = dmalloc (size, MDL)) != NULL)
-    {
+	/* realloc would be better, but there isn't any */
+	if ((temp = dmalloc(size, MDL)) != NULL)
+	{
 #if defined (DEBUG_LDAP)
-      log_info ("Reallocated %s buffer from %zu to %zu",
-                cfile->tlname, cfile->bufsiz, size);
+		og_info ("Reallocated %s buffer from %zu to %zu",
+		file->tlname, cfile->bufsiz, size);
 #endif
-      memcpy(temp, cfile->inbuf, cfile->bufsiz);
-      dfree(cfile->inbuf, MDL);
-      cfile->inbuf  = temp;
-      cfile->bufsiz = size;
-      return 1;
-    }
+		memcpy(temp, cfile->inbuf, cfile->bufsiz);
+		dfree(cfile->inbuf, MDL);
+		cfile->inbuf  = temp;
+		cfile->bufsiz = size;
+		
+		return 1;
+	}
 
-  /*
-   * Hmm... what is worser, consider it as fatal error and
-   * bail out completely or discard config data in hope it
-   * is "only" an option in dynamic host lookup?
-   */
-  log_error("Unable to reallocated %s buffer from %zu to %zu",
-            cfile->tlname, cfile->bufsiz, size);
-  return 0;
+	/*
+	* Hmm... what is worser, consider it as fatal error and
+	* bail out completely or discard config data in hope it
+	* is "only" an option in dynamic host lookup?
+	*/
+	log_error("Unable to reallocated %s buffer from %zu to %zu",
+	cfile->tlname, cfile->bufsiz, size);
+	
+	return 0;
 }
 
-static char *
-x_parser_strcat(struct parse *cfile, const char *str)
+/*********************************************************************
+Func Name :   x_parser_strcat
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  将字符串粘连到文件缓冲区后面
+Input:	      
+Output:       
+Return:       char *
+Caution : 	  此函数可能导致resize
+*********************************************************************/
+static char * x_parser_strcat(struct parse *cfile, const char *str)
 {
-  size_t cur = strlen(cfile->inbuf);
-  size_t len = strlen(str);
-  size_t cnt;
+	size_t cur = strlen(cfile->inbuf);
+	size_t len = strlen(str);
+	size_t cnt;
 
-  if (cur + len >= cfile->bufsiz && !x_parser_resize(cfile, len))
-    return NULL;
+	if (cur + len >= cfile->bufsiz && !x_parser_resize(cfile, len))
+		return NULL;
 
-  cnt = cfile->bufsiz > cur ? cfile->bufsiz - cur - 1 : 0;
-  return strncat(cfile->inbuf, str, cnt);
+	cnt = cfile->bufsiz > cur ? cfile->bufsiz - cur - 1 : 0;
+	
+	return strncat(cfile->inbuf, str, cnt);
 }
 
-static inline void
-x_parser_reset(struct parse *cfile)
+/*********************************************************************
+Func Name :   x_parser_reset
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  将缓冲区内容清零
+Input:	      
+Output:       
+Return:       void
+Caution : 	  此函数不释放缓冲区内存，只是清零
+*********************************************************************/
+static inline void x_parser_reset(struct parse *cfile)
 {
   cfile->inbuf[0] = '\0';
   cfile->bufix = cfile->buflen = 0;
 }
 
-static inline size_t
-x_parser_length(struct parse *cfile)
+/*********************************************************************
+Func Name :   x_parser_length
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  获取文件缓冲区长度
+Input:	      
+Output:       
+Return:       size_t
+Caution : 
+*********************************************************************/
+static inline size_t x_parser_length(struct parse *cfile)
 {
-  cfile->buflen = strlen(cfile->inbuf);
-  return cfile->buflen;
+	cfile->buflen = strlen(cfile->inbuf);
+	return cfile->buflen;
 }
 
-static char *
-x_strxform(char *dst, const char *src, size_t dst_size,
-           int (*xform)(int))
+/*********************************************************************
+Func Name :   x_strxform
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  合并两个字符串
+Input:	      
+Output:       
+Return:       size_t
+Caution : 	  src会按照提供的格式修改函数修改格式之后拷贝到dst中，dst长度不可扩展，
+				若超长会截断
+*********************************************************************/
+static char * x_strxform
+(
+	char *dst, 
+	const char *src, 
+	size_t dst_size,
+    int (*xform)(int)
+)
 {
-  if(dst && src && dst_size)
-    {
-      size_t len, pos;
+	if(dst && src && dst_size)
+	{
+		size_t len, pos;
 
-      len = strlen(src);
-      for(pos=0; pos < len && pos + 1 < dst_size; pos++)
-        dst[pos] = xform((int)src[pos]);
-      dst[pos] = '\0';
+		len = strlen(src);
+		for(pos = 0; pos < len && pos + 1 < dst_size; pos++)
+			dst[pos] = xform((int)src[pos]);
+		dst[pos] = '\0';
 
-      return dst;
-    }
-  return NULL;
+		return dst;
+	}
+	
+	return NULL;
 }
 
-static int
-get_host_entry(char *fqdnname, size_t fqdnname_size,
-               char *hostaddr, size_t hostaddr_size)
+/*********************************************************************
+Func Name :   x_strxform
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  获取主机数据，包括主机名和主机地址等数据
+Input:	      
+Output:       
+Return:       int
+Caution : 	  
+*********************************************************************/
+static int get_host_entry
+(
+	char *fqdnname, 
+	size_t fqdnname_size,
+    char *hostaddr, 
+    size_t hostaddr_size
+)
 {
 #if defined(MAXHOSTNAMELEN)
-  char   hname[MAXHOSTNAMELEN+1];
+	char hname[MAXHOSTNAMELEN + 1];
 #else
-  char   hname[65];
+	char hname[65];
 #endif
-  struct hostent *hp;
+	struct hostent *hp;
 
-  if (NULL == fqdnname || 1 >= fqdnname_size)
-    return -1;
+	if (NULL == fqdnname || 1 >= fqdnname_size)
+		return -1;
 
-  memset(hname, 0, sizeof(hname));
-  if (gethostname(hname, sizeof(hname)-1))
-    return -1;
+	memset(hname, 0, sizeof(hname));
+	if (gethostname(hname, sizeof(hname) - 1))
+		return -1;
 
-  if (NULL == (hp = gethostbyname(hname)))
-    return -1;
+	if (NULL == (hp = gethostbyname(hname)))
+		return -1;
 
-  strncpy(fqdnname, hp->h_name, fqdnname_size-1);
-  fqdnname[fqdnname_size-1] = '\0';
+	strncpy(fqdnname, hp->h_name, fqdnname_size - 1);
+	fqdnname[fqdnname_size - 1] = '\0';
 
-  if (hostaddr != NULL)
-    {
-      if (hp->h_addr != NULL)
-        {
-          struct in_addr *aptr = (struct in_addr *)hp->h_addr;
+	if (hostaddr != NULL)
+	{
+		if (hp->h_addr != NULL)
+		{
+			struct in_addr *aptr = (struct in_addr *)hp->h_addr;
 #if defined(HAVE_INET_NTOP)
-          if (hostaddr_size >= INET_ADDRSTRLEN &&
-              inet_ntop(AF_INET, aptr, hostaddr, hostaddr_size) != NULL)
-            {
-              return 0;
-            }
+			if (hostaddr_size >= INET_ADDRSTRLEN &&
+				inet_ntop(AF_INET, aptr, hostaddr, hostaddr_size) != NULL)
+			{
+				return 0;
+			}
 #else
-          char  *astr = inet_ntoa(*aptr);
-          size_t alen = strlen(astr);
-          if (astr && alen > 0 && hostaddr_size > alen)
-            {
-              strncpy(hostaddr, astr, hostaddr_size-1);
-              hostaddr[hostaddr_size-1] = '\0';
-              return 0;
-            }
+			char  *astr = inet_ntoa(*aptr);
+			size_t alen = strlen(astr);
+			if (astr && alen > 0 && hostaddr_size > alen)
+			{
+				strncpy(hostaddr, astr, hostaddr_size - 1);
+				hostaddr[hostaddr_size - 1] = '\0';
+				
+				return 0;
+			}
 #endif
-        }
-      return -1;
-    }
-  return 0;
+		}
+		
+		return -1;
+	}
+	
+	return 0;
 }
 
 #if defined(HAVE_IFADDRS_H)
-static int
-is_iface_address(struct ifaddrs *addrs, struct in_addr *addr)
+/*********************************************************************
+Func Name :   is_iface_address
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  查找指定IP地址
+Input:	      
+Output:       
+Return:       int
+Caution : 	  若找到返回索引值，没找到返回0，错误返回-1
+*********************************************************************/
+static int is_iface_address(struct ifaddrs *addrs, struct in_addr *addr)
 {
-  struct ifaddrs     *ia;
-  struct sockaddr_in *sa;
-  int                 num = 0;
+	struct ifaddrs     *ia;
+	struct sockaddr_in *sa;
+	int                 num = 0;
 
-  if(addrs == NULL || addr == NULL)
-    return -1;
+	if (addrs == NULL || addr == NULL)
+		return -1;
 
-  for (ia = addrs; ia != NULL; ia = ia->ifa_next)
-    {
-      ++num;
-      if (ia->ifa_addr && (ia->ifa_flags & IFF_UP) &&
-          ia->ifa_addr->sa_family == AF_INET)
-      {
-        sa = (struct sockaddr_in *)(ia->ifa_addr);
-        if (addr->s_addr == sa->sin_addr.s_addr)
-          return num;
-      }
-    }
-  return 0;
+	for (ia = addrs; ia != NULL; ia = ia->ifa_next)
+	{
+		++num;
+		if (ia->ifa_addr && (ia->ifa_flags & IFF_UP) &&
+			ia->ifa_addr->sa_family == AF_INET)
+		{
+			sa = (struct sockaddr_in *)(ia->ifa_addr);
+			if (addr->s_addr == sa->sin_addr.s_addr)
+				return num;
+		}
+	}
+	
+	return 0;
 }
 
-static int
-get_host_address(const char *hostname, char *hostaddr, size_t hostaddr_size, struct ifaddrs *addrs)
+/*********************************************************************
+Func Name :   get_host_address
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  获取主机ip
+Input:	      
+Output:       
+Return:       int
+Caution : 	  
+*********************************************************************/
+static int get_host_address
+(
+	const char *hostname, 
+	char *hostaddr, 
+	size_t hostaddr_size, 
+	struct ifaddrs *addrs
+)
 {
-  if (hostname && *hostname && hostaddr && hostaddr_size)
-    {
-      struct in_addr addr;
+	if (hostname && *hostname && hostaddr && hostaddr_size)
+	{
+		struct in_addr addr;
 
 #if defined(HAVE_INET_PTON)
-      if (inet_pton(AF_INET, hostname, &addr) == 1)
+		if (inet_pton(AF_INET, hostname, &addr) == 1)
 #else
-      if (inet_aton(hostname, &addr) != 0)
+		if (inet_aton(hostname, &addr) != 0)
 #endif
-        {
-          /* it is already IP address string */
-          if(strlen(hostname) < hostaddr_size)
-            {
-              strncpy(hostaddr, hostname, hostaddr_size-1);
-              hostaddr[hostaddr_size-1] = '\0';
+		{
+			/* it is already IP address string */
+			if (strlen(hostname) < hostaddr_size)
+			{
+				strncpy(hostaddr, hostname, hostaddr_size - 1);
+				hostaddr[hostaddr_size - 1] = '\0';
 
-              if (addrs != NULL && is_iface_address (addrs, &addr) > 0)
-                return 1;
-              else
-                return 0;
-            }
-        }
-      else
-        {
-          struct hostent *hp;
-          if ((hp = gethostbyname(hostname)) != NULL && hp->h_addr != NULL)
-            {
-              struct in_addr *aptr  = (struct in_addr *)hp->h_addr;
-              int             mret = 0;
+				if (addrs != NULL && is_iface_address(addrs, &addr) > 0)
+					return 1;
+				else
+					return 0;
+			}
+		}
+		else
+		{
+			struct hostent *hp;
+			if ((hp = gethostbyname(hostname)) != NULL && hp->h_addr != NULL)
+			{
+				struct in_addr *aptr = (struct in_addr *)hp->h_addr;
+				int mret = 0;
 
-              if (addrs != NULL)
-                {
-                  char **h;
-                  for (h=hp->h_addr_list; *h; h++)
-                    {
-                      struct in_addr *haddr = (struct in_addr *)*h;
-                      if (is_iface_address (addrs, haddr) > 0)
-                        {
-                          aptr = haddr;
-                          mret = 1;
-                        }
-                    }
-                }
+				if (addrs != NULL)
+				{
+					char **h;
+					for (h = hp->h_addr_list; *h; h++)
+					{
+						struct in_addr *haddr = (struct in_addr *)*h;
+						if (is_iface_address(addrs, haddr) > 0)
+						{
+							aptr = haddr;
+							mret = 1;
+						}
+					}
+				}
 
 #if defined(HAVE_INET_NTOP)
-              if (hostaddr_size >= INET_ADDRSTRLEN &&
-                  inet_ntop(AF_INET, aptr, hostaddr, hostaddr_size) != NULL)
-                {
-                  return mret;
-                }
+				if (hostaddr_size >= INET_ADDRSTRLEN &&
+					inet_ntop(AF_INET, aptr, hostaddr, hostaddr_size) != NULL)
+				{
+					return mret;
+				}
 #else
-              char  *astr = inet_ntoa(*aptr);
-              size_t alen = strlen(astr);
-              if (astr && alen > 0 && alen < hostaddr_size)
-                {
-                  strncpy(hostaddr, astr, hostaddr_size-1);
-                  hostaddr[hostaddr_size-1] = '\0';
-                  return mret;
-                }
+				char  *astr = inet_ntoa(*aptr);
+				size_t alen = strlen(astr);
+				if (astr && alen > 0 && alen < hostaddr_size)
+				{
+					strncpy(hostaddr, astr, hostaddr_size - 1);
+					hostaddr[hostaddr_size - 1] = '\0';
+					return mret;
+				}
 #endif
-            }
-        }
-    }
-  return -1;
+			}
+		}
+	}
+	
+	return -1;
 }
 #endif /* HAVE_IFADDRS_H */
 
-static void
-ldap_parse_class (struct ldap_config_stack *item, struct parse *cfile)
+/*********************************************************************
+Func Name :   ldap_parse_class
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  
+Input:	      
+Output:       
+Return:       void
+Caution : 	  
+*********************************************************************/
+static void ldap_parse_class(struct ldap_config_stack *item, struct parse *cfile)
 {
-  struct berval **tempbv;
+	struct berval **tempbv;
 
-  if ((tempbv = ldap_get_values_len (ld, item->ldent, "cn")) == NULL ||
-      tempbv[0] == NULL)
-    {
-      if (tempbv != NULL)
-        ldap_value_free_len (tempbv);
+	if ((tempbv = ldap_get_values_len(ld, item->ldent, "cn")) == NULL ||
+		tempbv[0] == NULL)
+	{
+		if (tempbv != NULL)
+			ldap_value_free_len(tempbv);
 
-      return;
-    }
+		return;
+	}
 
-  x_parser_strcat (cfile, "class \"");
-  x_parser_strcat (cfile, tempbv[0]->bv_val);
-  x_parser_strcat (cfile, "\" {\n");
+	x_parser_strcat(cfile, "class \"");
+	x_parser_strcat(cfile, tempbv[0]->bv_val);
+	x_parser_strcat(cfile, "\" {\n");
 
-  item->close_brace = 1;
-  ldap_value_free_len (tempbv);
+	item->close_brace = 1;
+	ldap_value_free_len(tempbv);
 }
 
-static int
-is_hex_string(const char *str)
+static int is_hex_string(const char *str)
 {
-  int colon = 1;
-  int xdigit = 0;
-  size_t i;
+	int colon = 1;
+	int xdigit = 0;
+	size_t i;
 
-  if (!str)
-    return 0;
+	if (!str)
+		return 0;
 
-  if (*str == '-')
-    str++;
+	if (*str == '-')
+		str++;
 
-  for (i=0; str[i]; ++i)
-    {
-      if (str[i] == ':')
-        {
-          xdigit = 0;
-          if(++colon > 1)
-            return 0;
-        }
-      else if(isxdigit((unsigned char)str[i]))
-        {
-          colon = 0;
-          if (++xdigit > 2)
-            return 0;
-        }
-      else
-        return 0;
-    }
-  return i > 0 && !colon;
+	for (i = 0; str[i]; ++i)
+	{
+		if (str[i] == ':')
+		{
+			xdigit = 0;
+			if(++colon > 1)
+				return 0;
+		}
+		else if (isxdigit((unsigned char)str[i]))
+		{
+			colon = 0;
+			if (++xdigit > 2)
+				return 0;
+		}
+		else
+			return 0;
+	}
+	
+	return i > 0 && !colon;
 }
 
 static void
@@ -2110,33 +2242,32 @@ ldap_write_debug (const void *buff, size_t size)
     }
 }
 
-static int
-ldap_read_function (struct parse *cfile)
+static int ldap_read_function(struct parse *cfile)
 {
-  size_t len;
+	size_t len;
 
-  /* append when in saved state */
-  if (cfile->saved_state == NULL)
-    {
-      cfile->inbuf[0] = '\0';
-      cfile->bufix = 0;
-      cfile->buflen = 0;
-    }
-  len = cfile->buflen;
+	/* append when in saved state */
+	if (cfile->saved_state == NULL)
+	{
+		cfile->inbuf[0] = '\0';
+		cfile->bufix = 0;
+		cfile->buflen = 0;
+	}
+	len = cfile->buflen;
 
-  while (ldap_stack != NULL && x_parser_length(cfile) <= len)
-    ldap_generate_config_string (cfile);
+	while (ldap_stack != NULL && x_parser_length(cfile) <= len)
+		ldap_generate_config_string (cfile);
 
-  if (x_parser_length(cfile) <= len && ldap_stack == NULL)
-    return (EOF);
+	if (x_parser_length(cfile) <= len && ldap_stack == NULL)
+		return (EOF);
 
-  if (cfile->buflen > len)
-    ldap_write_debug (cfile->inbuf + len, cfile->buflen - len);
+	if (cfile->buflen > len)
+		ldap_write_debug (cfile->inbuf + len, cfile->buflen - len);
 #if defined (DEBUG_LDAP)
-  log_info ("Sending config portion '%s'", cfile->inbuf + len);
+	log_info ("Sending config portion '%s'", cfile->inbuf + len);
 #endif
 
-  return (cfile->inbuf[cfile->bufix++]);
+	return (cfile->inbuf[cfile->bufix++]);
 }
 
 

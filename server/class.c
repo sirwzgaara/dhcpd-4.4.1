@@ -257,6 +257,7 @@ isc_result_t find_class
 	struct collection *lp;
 	struct class *cp;
 
+	/* 遍历若干collection中的若干class */
 	for (lp = collections; lp; lp = lp->next) 
 	{
 		for (cp = lp->classes; cp; cp = cp->nic)
@@ -265,6 +266,7 @@ isc_result_t find_class
 				return class_reference(class, cp, file, line);
 			}
 	}
+	
 	return ISC_R_NOTFOUND;
 }
 

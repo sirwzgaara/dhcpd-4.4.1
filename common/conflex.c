@@ -66,7 +66,8 @@ isc_result_t new_parse
 	struct parse *tmp;
 
 	tmp = dmalloc(sizeof(struct parse), MDL);
-	if (tmp == NULL) {
+	if (tmp == NULL) 
+	{
 		return (ISC_R_NOMEMORY);
 	}
 
@@ -122,21 +123,36 @@ cleanup:
 	return (status);
 }
 
-isc_result_t end_parse (cfile)
-	struct parse **cfile;
+/*********************************************************************
+Func Name :   end_parse
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  结束一个解析文件过程，关闭文件，销毁映射到的内存
+Input:	      
+Output:       
+Return:       isc_result_t
+Caution : 
+*********************************************************************/
+isc_result_t end_parse
+(
+	truct parse **cfile
+)
 {
 	/* "Memory" config files have no file. */
-	if ((*cfile)->file != -1) {
+	if ((*cfile)->file != -1) 
+	{
 		munmap((*cfile)->inbuf, (*cfile)->bufsiz);
 		close((*cfile)->file);
 	}
 
-	if ((*cfile)->saved_state != NULL) {
+	if ((*cfile)->saved_state != NULL) 
+	{
 		dfree((*cfile)->saved_state, MDL);
 	}
 		
 	dfree(*cfile, MDL);
 	*cfile = NULL;
+	
 	return ISC_R_SUCCESS;
 }
 

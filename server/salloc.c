@@ -246,15 +246,19 @@ void relinquish_free_lease_states ()
 }
 #endif
 
-struct permit *new_permit (file, line)
-	const char *file;
-	int line;
+struct permit *new_permit
+(
+	const char *file,
+	int line
+)
 {
 	struct permit *permit = ((struct permit *)
-				 dmalloc (sizeof (struct permit), file, line));
+				 dmalloc(sizeof(struct permit), file, line));
 	if (!permit)
 		return permit;
-	memset (permit, 0, sizeof *permit);
+	
+	memset(permit, 0, sizeof *permit);
+	
 	return permit;
 }
 
