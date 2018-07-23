@@ -1893,17 +1893,19 @@ void get_permit
 	 * CLIENTS token
 	 */
 	if ((need_clients != 0)  &&
-	    (next_token (&val, NULL, cfile) != CLIENTS)) {
-		parse_warn (cfile, "expecting \"clients\"");
-		skip_to_semi (cfile);
-		free_permit (permit, MDL);
+	    (next_token (&val, NULL, cfile) != CLIENTS))
+	{
+		parse_warn(cfile, "expecting \"clients\"");
+		skip_to_semi(cfile);
+		free_permit(permit, MDL);
+		
 		return;
 	}
 
 	while (*permit_head)
 		permit_head = &((*permit_head)->next);
 	*permit_head = permit;
-	parse_semi (cfile);
+	parse_semi(cfile);
 
 	return;
 }
