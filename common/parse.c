@@ -4106,12 +4106,12 @@ int parse_non_binary
 		if (token != RPAREN)
 			goto norparen;
 		break;
-		
+
+		/* 解析到字符串，做成const data保存到表达式中 */
 	      case STRING:
 		skip_token(&val, &len, cfile);
-		if (!make_const_data (expr, (const unsigned char *)val,
-				      len, 1, 1, MDL))
-			log_fatal ("can't make constant string expression.");
+		if (!make_const_data(expr, (const unsigned char *)val, len, 1, 1, MDL))
+			log_fatal("can't make constant string expression.");
 		break;
 
 	      case EXTRACT_INT:
@@ -4672,6 +4672,7 @@ int parse_expression
 		context = expression_context (rhs);
 		break;
 
+		/* 没有符号了，说明解析终止 */
 	      default:
 		next_op = expr_none;
 	}

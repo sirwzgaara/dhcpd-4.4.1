@@ -1846,13 +1846,13 @@ void get_permit
 			return;
 		}
 		
-		if (next_token (&val, NULL, cfile) != STRING) 
+		if (next_token(&val, NULL, cfile) != STRING) 
 		{
 			parse_warn(cfile, "expecting class name.");
 			skip_to_semi(cfile);
 			free_permit(permit, MDL);
-			return;
 			
+			return;		
 		}
 		
 		permit->type = permit_class;
@@ -1915,7 +1915,7 @@ void get_permit
    two lists are equal - to check for equality, permit_list_match has to
    return 1 with (list1, list2) and with (list2, list1). */
 
-int permit_list_match (struct permit *lhs, struct permit *rhs)
+int permit_list_match(struct permit *lhs, struct permit *rhs)
 {
 	struct permit *plp, *prp;
 	int matched;
@@ -1924,12 +1924,16 @@ int permit_list_match (struct permit *lhs, struct permit *rhs)
 		return 1;
 	if (!rhs)
 		return 0;
-	for (plp = lhs; plp; plp = plp -> next) {
+	
+	for (plp = lhs; plp; plp = plp->next) 
+	{
 		matched = 0;
-		for (prp = rhs; prp; prp = prp -> next) {
-			if (prp -> type == plp -> type &&
-			    (prp -> type != permit_class ||
-			     prp -> class == plp -> class)) {
+		for (prp = rhs; prp; prp = prp->next) 
+		{
+			if (prp->type == plp->type &&
+			    (prp->type != permit_class ||
+			     prp->class == plp->class)) 
+			{
 				matched = 1;
 				break;
 			}
@@ -1937,6 +1941,7 @@ int permit_list_match (struct permit *lhs, struct permit *rhs)
 		if (!matched)
 			return 0;
 	}
+	
 	return 1;
 }
 
