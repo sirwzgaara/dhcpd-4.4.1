@@ -49,17 +49,41 @@ void classification_setup ()
 	default_classification_rules->data.eval->data.check = &default_collection;
 }
 
-void classify_client (packet)
-	struct packet *packet;
+/*********************************************************************
+Func Name :   classify_client
+Date Created: 2018/07/24
+Author:  	  wangzhe
+Description:  根据报文中的option对pack进行分类
+Input:	      struct packet * packet
+Output:       
+Return:       void
+Caution : 	  
+*********************************************************************/
+void classify_client
+(
+	struct packet *packet
+)
 {
-	execute_statements (NULL, packet, NULL, NULL, packet->options, NULL,
+	execute_statements(NULL, packet, NULL, NULL, packet->options, NULL,
 			    &global_scope, default_classification_rules, NULL);
 }
 
-int check_collection (packet, lease, collection)
-	struct packet *packet;
-	struct lease *lease;
-	struct collection *collection;
+/*********************************************************************
+Func Name :   check_collection
+Date Created: 2018/07/24
+Author:  	  wangzhe
+Description:  挂接class到packet下
+Input:	      
+Output:       
+Return:       void
+Caution : 	  
+*********************************************************************/
+int check_collection 
+(
+	struct packet *packet,
+	struct lease *lease,
+	struct collection *collection
+)
 {
 	struct class *class, *nc;
 	struct data_string data;
@@ -68,11 +92,12 @@ int check_collection (packet, lease, collection)
 	int ignorep;
 	int classfound;
 
-	for (class = collection -> classes; class; class = class -> nic) {
+	for (class = collection->classes; class; class = class->nic) 
+	{
 #if defined (DEBUG_CLASS_MATCHING)
 		log_info ("checking against class %s...", class -> name);
 #endif
-		memset (&data, 0, sizeof data);
+		memset(&data, 0, sizeof(data));
 
 		/* If there is a "match if" expression, check it.   If
 		   we get a match, and there's no subclass expression,
@@ -80,30 +105,35 @@ int check_collection (packet, lease, collection)
 		   expression, then we check the submatch.   If it's not a
 		   match, that's final - we don't check the submatch. */
 
-		if (class -> expr) {
+		if (class->expr) 
+		{
 			status = (evaluate_boolean_expression_result
 				  (&ignorep, packet, lease,
 				   (struct client_state *)0,
-				   packet -> options, (struct option_state *)0,
-				   lease ? &lease -> scope : &global_scope,
-				   class -> expr));
-			if (status) {
-				if (!class -> submatch) {
+				   packet->options, (struct option_state *)0,
+				   lease ? &lease->scope : &global_scope,
+				   class->expr));
+			if (status) 
+			{
+				if (!class->submatch) 
+				{
 					matched = 1;
 #if defined (DEBUG_CLASS_MATCHING)
 					log_info ("matches class.");
 #endif
-					classify (packet, class);
+					classify(packet, class);
 					continue;
 				}
-			} else
+			} 
+			else
 				continue;
 		}
 
 		/* Check to see if the client matches an existing subclass.
 		   If it doesn't, and this is a spawning class, spawn a new
 		   subclass and put the client in it. */
-		if (class -> submatch) {
+		if (class->submatch) 
+		{
 			status = (evaluate_data_expression
 				  (&data, packet, lease,
 				   (struct client_state *)0,
@@ -188,18 +218,30 @@ int check_collection (packet, lease, collection)
 	return matched;
 }
 
-void classify (packet, class)
-	struct packet *packet;
-	struct class *class;
+/*********************************************************************
+Func Name :   classify
+Date Created: 2018/07/24
+Author:  	  wangzhe
+Description:  设置一个packet所属的类
+Input:	      
+Output:       
+Return:       void
+Caution : 	  
+*********************************************************************/
+void classify
+(
+	struct packet *packet,
+	struct class *class
+
+)
 {
-	if (packet -> class_count < PACKET_MAX_CLASSES)
-		class_reference (&packet -> classes [packet -> class_count++],
-				 class, MDL);
+	if (packet->class_count < PACKET_MAX_CLASSES)
+		class_reference(&packet->classes[packet->class_count++], class, MDL);
 	else
 		log_error ("too many classes match %s",
-		      print_hw_addr (packet -> raw -> htype,
-				     packet -> raw -> hlen,
-				     packet -> raw -> chaddr));
+		      print_hw_addr(packet->raw->htype,
+				     packet->raw->hlen,
+				     packet->raw->chaddr));
 }
 
 

@@ -32,6 +32,16 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+/*********************************************************************
+Func Name :   execute_statements
+Date Created: 2018/07/24
+Author:  	  wangzhe
+Description:  执行一个表达式中的语句
+Input:	      
+Output:       
+Return:       int
+Caution : 	  
+*********************************************************************/
 int execute_statements
 (
 	struct binding_value **result,
@@ -58,11 +68,13 @@ int execute_statements
 	r = NULL;
 	next = NULL;
 	e = NULL;
-	executable_statement_reference (&r, statements, MDL);
-	while (r && !(result && *result)) {
+	executable_statement_reference(&r, statements, MDL);
+	while (r && !(result && *result)) 
+	{
 		if (r->next)
-			executable_statement_reference (&next, r->next, MDL);
-		switch (r->op) {
+			executable_statement_reference(&next, r->next, MDL);
+		switch (r->op) 
+		{
 		      case statements_statement:
 #if defined (DEBUG_EXPRESSIONS)
 			log_debug ("exec: statements");

@@ -530,24 +530,30 @@ void relinquish_free_expressions ()
 
 struct binding_value *free_binding_values;
 
-int binding_value_allocate (cptr, file, line)
-	struct binding_value **cptr;
-	const char *file;
-	int line;
+int binding_value_allocate
+(
+	struct binding_value **cptr
+	const char *file,
+	int line
+)
 {
 	struct binding_value *rval;
 
-	if (free_binding_values) {
+	if (free_binding_values) 
+	{
 		rval = free_binding_values;
-		free_binding_values = rval -> value.bv;
-		dmalloc_reuse (rval, file, line, 1);
-	} else {
-		rval = dmalloc (sizeof (struct binding_value), file, line);
+		free_binding_values = rval->value.bv;
+		dmalloc_reuse(rval, file, line, 1);
+	}
+	else 
+	{
+		rval = dmalloc(sizeof (struct binding_value), file, line);
 		if (!rval)
 			return 0;
 	}
-	memset (rval, 0, sizeof *rval);
-	return binding_value_reference (cptr, rval, file, line);
+	memset(rval, 0, sizeof *rval);
+	
+	return binding_value_reference(cptr, rval, file, line);
 }
 
 int binding_value_reference (ptr, src, file, line)
@@ -1396,6 +1402,7 @@ void data_string_copy
 	{
 		dest->buffer = NULL;
 	}
+	
 	dest->data 		 = src->data;
 	dest->terminated = src->terminated;
 	dest->len 		 = src->len;

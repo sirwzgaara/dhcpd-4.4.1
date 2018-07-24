@@ -2275,32 +2275,47 @@ const char *pretty_print_option (option, data, len, emit_commas, emit_quotes)
 	return optbuf;
 }
 
-int get_option (result, universe, packet, lease, client_state,
-		in_options, cfg_options, options, scope, code, file, line)
-	struct data_string *result;
-	struct universe *universe;
-	struct packet *packet;
-	struct lease *lease;
-	struct client_state *client_state;
-	struct option_state *in_options;
-	struct option_state *cfg_options;
-	struct option_state *options;
-	struct binding_scope **scope;
-	unsigned code;
-	const char *file;
-	int line;
+/*********************************************************************
+Func Name :   get_option
+Date Created: 2018/07/24
+Author:  	  wangzhe
+Description:  
+Input:	      
+Output:       
+Return:       int
+Caution : 	  
+*********************************************************************/
+int get_option 
+(
+	struct data_string *result,
+	struct universe *universe,
+	struct packet *packet,
+	struct lease *lease,
+	struct client_state *client_state,
+	struct option_state *in_options,
+	struct option_state *cfg_options,
+	struct option_state *options,
+	struct binding_scope **scope,
+	unsigned code,
+	const char *file,
+	int line
+)
 {
 	struct option_cache *oc;
 
-	if (!universe -> lookup_func)
+	/* 先检查hash表，若没有这个option，说明是不支持的option，直接返回 */
+	if (!universe->lookup_func)
 		return 0;
-	oc = ((*universe -> lookup_func) (universe, options, code));
+	
+	oc = ((*universe->lookup_func)(universe, options, code));
 	if (!oc)
 		return 0;
-	if (!evaluate_option_cache (result, packet, lease, client_state,
+	
+	if (!evaluate_option_cache(result, packet, lease, client_state,
 				    in_options, cfg_options, scope, oc,
 				    file, line))
 		return 0;
+	
 	return 1;
 }
 

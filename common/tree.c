@@ -532,18 +532,29 @@ static int do_host_lookup (result, dns)
 	return 1;
 }
 
-int evaluate_expression (result, packet, lease, client_state,
-			 in_options, cfg_options, scope, expr, file, line)
-	struct binding_value **result;
-	struct packet *packet;
-	struct lease *lease;
-	struct client_state *client_state;
-	struct option_state *in_options;
-	struct option_state *cfg_options;
-	struct binding_scope **scope;
-	struct expression *expr;
-	const char *file;
-	int line;
+/*********************************************************************
+Func Name :   evaluate_expression
+Date Created: 2018/07/24
+Author:  	  wangzhe
+Description:  ¼ÆËã±í´ïÊ½µÄÖµ
+Input:	      
+Output:       
+Return:       int
+Caution : 	  
+*********************************************************************/
+int evaluate_expression 
+(
+	struct binding_value **result,
+	struct packet *packet,
+	struct lease *lease,
+	struct client_state *client_state,
+	struct option_state *in_options,
+	struct option_state *cfg_options,
+	struct binding_scope **scope,
+	struct expression *expr,
+	const char *file,
+	int line
+)
 {
 	struct binding_value *bv;
 	int status;
@@ -551,7 +562,8 @@ int evaluate_expression (result, packet, lease, client_state,
 
 	bv = (struct binding_value *)0;
 
-	if (expr -> op == expr_variable_reference) {
+	if (expr->op == expr_variable_reference) 
+	{
 		if (!scope || !*scope)
 			return 0;
 
@@ -565,7 +577,9 @@ int evaluate_expression (result, packet, lease, client_state,
 			return 1;
 		} else
 			return 0;
-	} else if (expr -> op == expr_funcall) {
+	} 
+	else if (expr->op == expr_funcall) 
+	{
 		struct string_list *s;
 		struct expression *arg;
 		struct binding_scope *ns;
@@ -651,12 +665,15 @@ int evaluate_expression (result, packet, lease, client_state,
 
 		if (!bv)
 			return 1;
-        } else if (is_boolean_expression (expr)) {
-		if (!binding_value_allocate (&bv, MDL))
+        }
+	else if (is_boolean_expression(expr)) 
+	{
+		if (!binding_value_allocate(&bv, MDL))
 			return 0;
-		bv -> type = binding_boolean;
+		
+		bv->type = binding_boolean;
 		status = (evaluate_boolean_expression
-			  (&bv -> value.boolean, packet, lease, client_state,
+			  (&bv->value.boolean, packet, lease, client_state,
 			   in_options, cfg_options, scope, expr));
 	} else if (is_numeric_expression (expr)) {
 		if (!binding_value_allocate (&bv, MDL))
@@ -665,21 +682,25 @@ int evaluate_expression (result, packet, lease, client_state,
 		status = (evaluate_numeric_expression
 			  (&bv -> value.intval, packet, lease, client_state,
 			   in_options, cfg_options, scope, expr));
-	} else if (is_data_expression  (expr)) {
-		if (!binding_value_allocate (&bv, MDL))
+	} 
+	else if (is_data_expression(expr)) 
+	{
+		if (!binding_value_allocate(&bv, MDL))
 			return 0;
-		bv -> type = binding_data;
+		
+		bv->type = binding_data;
 		status = (evaluate_data_expression
-			  (&bv -> value.data, packet, lease, client_state,
+			  (&bv->value.data, packet, lease, client_state,
 			   in_options, cfg_options, scope, expr, MDL));
 	} else {
 		log_error ("%s: invalid expression type: %d",
 			   "evaluate_expression", expr -> op);
 		return 0;
 	}
+	
 	if (result && status)
-		binding_value_reference (result, bv, file, line);
-	binding_value_dereference (&bv, MDL);
+		binding_value_reference(result, bv, file, line);
+	binding_value_dereference(&bv, MDL);
 
 	return status;
 }
@@ -726,16 +747,27 @@ int binding_value_dereference (struct binding_value **v,
 	return 1;
 }
 
-int evaluate_boolean_expression (result, packet, lease, client_state,
-				 in_options, cfg_options, scope, expr)
-	int *result;
-	struct packet *packet;
-	struct lease *lease;
-	struct client_state *client_state;
-	struct option_state *in_options;
-	struct option_state *cfg_options;
-	struct binding_scope **scope;
-	struct expression *expr;
+/*********************************************************************
+Func Name :   evaluate_boolean_expression
+Date Created: 2018/07/24
+Author:  	  wangzhe
+Description:  ¼ÆËã²¼¶û±í´ïÊ½µÄÖµ
+Input:	      
+Output:       
+Return:       int
+Caution : 	  
+*********************************************************************/
+int evaluate_boolean_expression 
+(
+	int *result,
+	struct packet *packet,
+	struct lease *lease,
+	struct client_state *client_state,
+	struct option_state *in_options,
+	struct option_state *cfg_options,
+	struct binding_scope **scope,
+	struct expression *expr
+)
 {
 	struct data_string left, right;
 	int bleft, bright;
@@ -747,10 +779,10 @@ int evaluate_boolean_expression (result, packet, lease, client_state,
 	regex_t re;
 #endif
 
-	switch (expr -> op) {
+	switch (expr->op) 
+	{
 	      case expr_check:
-		*result = check_collection (packet, lease,
-					    expr -> data.check);
+		*result = check_collection(packet, lease, expr->data.check);
 #if defined (DEBUG_EXPRESSIONS)
 		log_debug ("bool: check (%s) returns %s",
 			   expr -> data.check -> name,
@@ -758,61 +790,65 @@ int evaluate_boolean_expression (result, packet, lease, client_state,
 #endif
 		return 1;
 
+		/* ÈôÊÇµÈºÅ»òÕß²»µÈºÅ£¬È¡×óÓÒÁ½±ß */
 	      case expr_equal:
 	      case expr_not_equal:
 		bv = obv = (struct binding_value *)0;
-		sleft = evaluate_expression (&bv, packet, lease, client_state,
+		sleft = evaluate_expression(&bv, packet, lease, client_state,
 					     in_options, cfg_options, scope,
-					     expr -> data.equal [0], MDL);
-		sright = evaluate_expression (&obv, packet, lease,
-					      client_state, in_options,
-					      cfg_options, scope,
-					      expr -> data.equal [1], MDL);
-		if (sleft && sright) {
-		    if (bv -> type != obv -> type)
-			*result = expr -> op == expr_not_equal;
-		    else {
-			switch (obv -> type) {
-			  case binding_boolean:
-			    if (bv -> value.boolean == obv -> value.boolean)
-				*result = expr -> op == expr_equal;
-			    else
-				*result = expr -> op == expr_not_equal;
-			    break;
+					     expr->data.equal[0], MDL);
+		sright = evaluate_expression(&obv, packet, lease,  client_state, 
+						 in_options, cfg_options, scope,
+					      expr->data.equal[1], MDL);
+		
+		if (sleft && sright) 
+		{
+		    if (bv->type != obv->type)
+				*result = expr->op == expr_not_equal;
+		    else 
+			{
+				switch (obv->type) 
+				{
+				  case binding_boolean:
+				    if (bv->value.boolean == obv->value.boolean)
+					*result = expr->op == expr_equal;
+				    else
+					*result = expr->op == expr_not_equal;
+				    break;
 
-			  case binding_data:
-			    if ((bv -> value.data.len ==
-				 obv -> value.data.len) &&
-				!memcmp (bv -> value.data.data,
-					 obv -> value.data.data,
-					 obv -> value.data.len))
-				*result = expr -> op == expr_equal;
-			    else
-				*result = expr -> op == expr_not_equal;
-			    break;
+				  case binding_data:
+				    if ((bv->value.data.len == obv->value.data.len) &&
+						!memcmp(bv->value.data.data,
+							 obv->value.data.data,
+							 obv->value.data.len))
+						*result = expr->op == expr_equal;
+				    else
+						*result = expr->op == expr_not_equal;
+				    break;
 
-			  case binding_numeric:
-			    if (bv -> value.intval == obv -> value.intval)
-				*result = expr -> op == expr_equal;
-			    else
-				*result = expr -> op == expr_not_equal;
-			    break;
+				  case binding_numeric:
+				    if (bv -> value.intval == obv -> value.intval)
+					*result = expr -> op == expr_equal;
+				    else
+					*result = expr -> op == expr_not_equal;
+				    break;
 
-			  case binding_function:
-			    if (bv -> value.fundef == obv -> value.fundef)
-				*result = expr -> op == expr_equal;
-			    else
-				*result = expr -> op == expr_not_equal;
-			    break;
-			  default:
-			    *result = expr -> op == expr_not_equal;
-			    break;
-			}
+				  case binding_function:
+				    if (bv -> value.fundef == obv -> value.fundef)
+					*result = expr -> op == expr_equal;
+				    else
+					*result = expr -> op == expr_not_equal;
+				    break;
+				  default:
+				    *result = expr -> op == expr_not_equal;
+				    break;
+				}
 		    }
-		} else if (!sleft && !sright)
-		    *result = expr -> op == expr_equal;
+		}
+		else if (!sleft && !sright)
+		    *result = expr->op == expr_equal;
 		else
-		    *result = expr -> op == expr_not_equal;
+		    *result = expr->op == expr_not_equal;
 
 #if defined (DEBUG_EXPRESSIONS)
 		log_debug ("bool: %sequal = %s",
@@ -820,9 +856,9 @@ int evaluate_boolean_expression (result, packet, lease, client_state,
 			   (*result ? "true" : "false"));
 #endif
 		if (sleft)
-			binding_value_dereference (&bv, MDL);
+			binding_value_dereference(&bv, MDL);
 		if (sright)
-			binding_value_dereference (&obv, MDL);
+			binding_value_dereference(&obv, MDL);
 		return 1;
 
 	      case expr_iregex_match:
@@ -1158,18 +1194,29 @@ int evaluate_boolean_expression (result, packet, lease, client_state,
 	return 0;
 }
 
-int evaluate_data_expression (result, packet, lease, client_state,
-			      in_options, cfg_options, scope, expr, file, line)
-	struct data_string *result;
-	struct packet *packet;
-	struct lease *lease;
-	struct client_state *client_state;
-	struct option_state *in_options;
-	struct option_state *cfg_options;
-	struct binding_scope **scope;
-	struct expression *expr;
-	const char *file;
-	int line;
+/*********************************************************************
+Func Name :   evaluate_data_expression
+Date Created: 2018/07/24
+Author:  	  wangzhe
+Description:  ¼ÆËãdata±í´ïÊ½µÄÖµ
+Input:	      
+Output:       
+Return:       int
+Caution : 	  
+*********************************************************************/
+int evaluate_data_expression 
+(
+	struct data_string *result,
+	struct packet *packet,
+	struct lease *lease,
+	struct client_state *client_state,
+	struct option_state *in_options,
+	struct option_state *cfg_options,
+	struct binding_scope **scope,
+	struct expression *expr,
+	const char *file,
+	int line
+)
 {
 	struct data_string data, other;
 	unsigned long offset, len, i;
@@ -1181,7 +1228,7 @@ int evaluate_data_expression (result, packet, lease, client_state,
 	struct packet *relay_packet;
 	struct option_state *relay_options;
 
-	switch (expr -> op) {
+	switch (expr->op) {
 		/* Extract N bytes starting at byte M of a data string. */
 	      case expr_substring:
 		memset (&data, 0, sizeof data);
@@ -1347,12 +1394,13 @@ int evaluate_data_expression (result, packet, lease, client_state,
 
 		/* Extract an option. */
 	      case expr_option:
+		/* Ò»°ãÀ´Ëµ£¬in_optionsÊÇpacketÖÐÌá¹©µÄ */
 		if (in_options)
-		    s0 = get_option (result,
-				     expr -> data.option -> universe,
+		    s0 = get_option(result,
+				     expr->data.option->universe,
 				     packet, lease, client_state,
 				     in_options, cfg_options, in_options,
-				     scope, expr -> data.option -> code,
+				     scope, expr->data.option->code,
 				     file, line);
 		else
 			s0 = 0;
@@ -1517,8 +1565,7 @@ int evaluate_data_expression (result, packet, lease, client_state,
 		      print_hex_1 (expr -> data.const_data.len,
 				   expr -> data.const_data.data, 60));
 #endif
-		data_string_copy (result,
-				  &expr -> data.const_data, file, line);
+		data_string_copy(result, &expr->data.const_data, file, line);
 		return 1;
 
 		/* Hostname lookup... */
@@ -2756,8 +2803,10 @@ int evaluate_option_cache
 		data_string_copy(result, &oc->data, file, line);
 		return 1;
 	}
+	
 	if (!oc->expression)
 		return 0;
+	
 	return evaluate_data_expression(result, packet, lease, client_state,
 					 in_options, cfg_options, scope,
 					 oc->expression, file, line);
@@ -2817,19 +2866,28 @@ int evaluate_boolean_option_cache (ignorep, packet,
 	return (result);
 }
 
-/* Evaluate a boolean expression and return the result of the evaluation,
-   or FALSE if it failed. */
-
-int evaluate_boolean_expression_result (ignorep, packet, lease, client_state,
-					in_options, cfg_options, scope, expr)
-	int *ignorep;
-	struct packet *packet;
-	struct lease *lease;
-	struct client_state *client_state;
-	struct option_state *in_options;
-	struct option_state *cfg_options;
-	struct binding_scope **scope;
-	struct expression *expr;
+/*********************************************************************
+Func Name :   evaluate_boolean_expression_result
+Date Created: 2018/07/24
+Author:  	  wangzhe
+Description:  Evaluate a boolean expression and return the result of the evaluation,
+   				or FALSE if it failedÂ
+Input:	      
+Output:       
+Return:       void
+Caution : 	  
+*********************************************************************/
+int evaluate_boolean_expression_result
+(
+	int *ignorep,
+	struct packet *packet,
+	struct lease *lease,
+	struct client_state *client_state,
+	struct option_state *in_options,
+	struct option_state *cfg_options,
+	struct binding_scope **scope,
+	struct expression *expr
+)
 {
 	int result;
 
@@ -2837,16 +2895,19 @@ int evaluate_boolean_expression_result (ignorep, packet, lease, client_state,
 	if (!expr)
 		return 0;
 	
-	if (!evaluate_boolean_expression (&result, packet, lease, client_state,
+	if (!evaluate_boolean_expression(&result, packet, lease, client_state,
 					  in_options, cfg_options,
 					  scope, expr))
 		return 0;
 
-	if (result == 2) {
+	if (result == 2) 
+	{
 		*ignorep = 1;
 		result = 0;
-	} else
+	} 
+	else
 		*ignorep = 0;
+	
 	return result;
 }
 		

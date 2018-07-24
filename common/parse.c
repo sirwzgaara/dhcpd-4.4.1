@@ -1167,11 +1167,17 @@ parse_date(cfile)
 	       return((TIME)0);
        return(guess);
 }
-
-/*
- * option-name :== IDENTIFIER |
- 		   IDENTIFIER . IDENTIFIER
- */
+/*********************************************************************
+Func Name :   parse_option_name
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  解析option名
+Input:	      
+Output:       
+Return:       
+Caution : 	  option-name :== IDENTIFIER |
+ 		   				IDENTIFIER . IDENTIFIER
+*********************************************************************/
 isc_result_t parse_option_name
 (
 	struct parse *cfile,
@@ -2013,17 +2019,24 @@ int parse_base64 (data, cfile)
 		return 0;
 }
 
-
-/*
- * colon-separated-hex-list :== NUMBER |
- *				NUMBER COLON colon-separated-hex-list
- */
-
-int parse_cshl (data, cfile)
-	struct data_string *data;
-	struct parse *cfile;
+/*********************************************************************
+Func Name :   parse_cshl
+Date Created: 2018/07/23
+Author:  	  wangzhe
+Description:  解析一个number或name到const data
+Input:	      
+Output:       
+Return:       
+Caution : 	  colon-separated-hex-list :== NUMBER |
+ *						NUMBER COLON colon-separated-hex-list
+*********************************************************************/
+int parse_cshl
+(
+	struct data_string *data,
+	struct parse *cfile
+)
 {
-	u_int8_t ibuf [128];
+	u_int8_t ibuf[128];
 	unsigned ilen = 0;
 	unsigned tlen = 0;
 	struct option_tag *sl = (struct option_tag *)0;
@@ -2033,8 +2046,9 @@ int parse_cshl (data, cfile)
 	unsigned char *rvp;
 
 	do {
-		token = next_token (&val, (unsigned *)0, cfile);
-		if (token != NUMBER && token != NUMBER_OR_NAME) {
+		token = next_token(&val, (unsigned *)0, cfile);
+		if (token != NUMBER && token != NUMBER_OR_NAME) 
+		{
 			parse_warn (cfile, "expecting hexadecimal number.");
 			skip_to_semi (cfile);
 			for (; sl; sl = next) {
@@ -2043,7 +2057,9 @@ int parse_cshl (data, cfile)
 			}
 			return 0;
 		}
-		if (ilen == sizeof ibuf) {
+		
+		if (ilen == sizeof(ibuf)) 
+		{
 			next = (struct option_tag *)
 				dmalloc (ilen - 1 +
 					 sizeof (struct option_tag), MDL);
@@ -2055,7 +2071,7 @@ int parse_cshl (data, cfile)
 			tlen += ilen;
 			ilen = 0;
 		}
-		convert_num (cfile, &ibuf [ilen++], val, 16, 8);
+		convert_num(cfile, &ibuf [ilen++], val, 16, 8);
 
 		token = peek_token (&val, (unsigned *)0, cfile);
 		if (token != COLON)
@@ -2063,22 +2079,25 @@ int parse_cshl (data, cfile)
 		skip_token(&val, (unsigned *)0, cfile);
 	} while (1);
 
-	if (!buffer_allocate (&data -> buffer, tlen + ilen, MDL))
-		log_fatal ("no memory to store octet data.");
-	data -> data = &data -> buffer -> data [0];
-	data -> len = tlen + ilen;
-	data -> terminated = 0;
+	if (!buffer_allocate(&data->buffer, tlen + ilen, MDL))
+		log_fatal("no memory to store octet data.");
+	
+	data->data 		 = &data->buffer->data[0];
+	data->len 		 = tlen + ilen;
+	data->terminated = 0;
 
-	rvp = &data -> buffer -> data [0];
-	while (sl) {
-		next = sl -> next;
-		memcpy (rvp, sl -> data, sizeof ibuf);
-		rvp += sizeof ibuf;
-		dfree (sl, MDL);
+	rvp = &data->buffer->data[0];
+	while (sl) 
+	{
+		next = sl->next;
+		memcpy(rvp, sl->data, sizeof(ibuf));
+		rvp += sizeof(ibuf);
+		dfree(sl, MDL);
 		sl = next;
 	}
 	
-	memcpy (rvp, ibuf, ilen);
+	memcpy(rvp, ibuf, ilen);
+	
 	return 1;
 }
 
@@ -3644,7 +3663,7 @@ int parse_non_binary
 		(*expr) -> op = expr_check;
 		(*expr) -> data.check = col;
 		break;
-
+NUMBER
 	      case TOKEN_NOT:
 		skip_token(&val, NULL, cfile);
 		if (!expression_allocate (expr, MDL))
@@ -4250,27 +4269,30 @@ int parse_non_binary
 			return 0;
 		}
 		break;
-	
+
+		/* 解析到数字，注意若context判断不过，没有break，进入下一个case处理 */
 	      case NUMBER:
 		/* If we're in a numeric context, this should just be a
 		   number, by itself. */
 		if (context == context_numeric ||
-		    context == context_data_or_numeric) {
+		    context == context_data_or_numeric) 
+		{
 			skip_token(&val, (unsigned *)0, cfile);
-			if (!expression_allocate (expr, MDL))
-				log_fatal ("can't allocate expression");
-			(*expr) -> op = expr_const_int;
-			(*expr) -> data.const_int = atoi (val);
+			if (!expression_allocate(expr, MDL))
+				log_fatal("can't allocate expression");
+			(*expr)->op = expr_const_int;
+			(*expr)->data.const_int = atoi(val);
 			break;
 		}
 
 	      case NUMBER_OR_NAME:
-		if (!expression_allocate (expr, MDL))
-			log_fatal ("can't allocate expression");
+		if (!expression_allocate(expr, MDL))
+			log_fatal("can't allocate expression");
 
-		(*expr) -> op = expr_const_data;
-		if (!parse_cshl (&(*expr) -> data.const_data, cfile)) {
-			expression_dereference (expr, MDL);
+		(*expr)->op = expr_const_data;
+		if (!parse_cshl(&(*expr)->data.const_data, cfile)) 
+		{
+			expression_dereference(expr, MDL);
 			return 0;
 		}
 		break;
@@ -4588,6 +4610,7 @@ int parse_expression
 		context = expression_context (rhs);
 		break;
 
+		/* 解析到等号 */
 	      case EQUAL:
 		next_op = expr_equal;
 		context = expression_context(rhs);
@@ -4723,11 +4746,13 @@ int parse_expression
 		next_op = expr_none;
 	}
 
+	/* 若是二元运算符 */
 	if (binop != expr_none) 
 	{
 		rhs_context = expression_context(rhs);
 		lhs_context = expression_context(lhs);
 
+		/* 检查是否类型不匹配 */
 		if ((rhs_context != context_any) && (lhs_context != context_any) &&
 			(rhs_context != lhs_context)) 
 		{
@@ -4740,6 +4765,7 @@ int parse_expression
 			return 0;
 		}
 
+		/* 根据运算符和表达式内容进一步检查 */
 	    switch(binop) 
 		{
 		    case expr_not_equal:

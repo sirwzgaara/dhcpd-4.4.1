@@ -259,7 +259,7 @@ void dhcp(struct packet *packet)
 	}
 
 	/* Classify the client. */
-	classify_client (packet);
+	classify_client(packet);
 
 	switch (packet->packet_type) {
 	      case DHCPDISCOVER:

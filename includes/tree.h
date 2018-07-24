@@ -140,10 +140,10 @@ enum expr_op {
 	expr_and,
 	expr_or,
 	expr_not,
-	expr_option,
+	expr_option,		//11
 	expr_hardware,
 	expr_packet,
-	expr_const_data,
+	expr_const_data,	//14
 	expr_extract_int8,
 	expr_extract_int16,
 	expr_extract_int32,
