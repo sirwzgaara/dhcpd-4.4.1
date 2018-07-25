@@ -751,7 +751,7 @@ int binding_value_dereference (struct binding_value **v,
 Func Name :   evaluate_boolean_expression
 Date Created: 2018/07/24
 Author:  	  wangzhe
-Description:  计算布尔表达式的值
+Description:  计算一个布尔表达式的值，返回1或者0表示true和false
 Input:	      
 Output:       
 Return:       int
@@ -794,13 +794,15 @@ int evaluate_boolean_expression
 	      case expr_equal:
 	      case expr_not_equal:
 		bv = obv = (struct binding_value *)0;
+		
 		sleft = evaluate_expression(&bv, packet, lease, client_state,
 					     in_options, cfg_options, scope,
 					     expr->data.equal[0], MDL);
-		sright = evaluate_expression(&obv, packet, lease,  client_state, 
+		
+		sright = evaluate_expression(&obv, packet, lease, client_state, 
 						 in_options, cfg_options, scope,
 					      expr->data.equal[1], MDL);
-		
+		/* 若左右两个表达式都找到了 */
 		if (sleft && sright) 
 		{
 		    if (bv->type != obv->type)
@@ -811,9 +813,9 @@ int evaluate_boolean_expression
 				{
 				  case binding_boolean:
 				    if (bv->value.boolean == obv->value.boolean)
-					*result = expr->op == expr_equal;
+						*result = expr->op == expr_equal;
 				    else
-					*result = expr->op == expr_not_equal;
+						*result = expr->op == expr_not_equal;
 				    break;
 
 				  case binding_data:
@@ -859,6 +861,7 @@ int evaluate_boolean_expression
 			binding_value_dereference(&bv, MDL);
 		if (sright)
 			binding_value_dereference(&obv, MDL);
+		
 		return 1;
 
 	      case expr_iregex_match:

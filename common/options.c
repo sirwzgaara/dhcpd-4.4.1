@@ -46,7 +46,7 @@ static int prepare_option_buffer(struct universe *universe, struct buffer *bp,
 Func Name :   parse_options
 Date Created: 2018/05/21
 Author:  	  wangzhe
-Description:  解析options字段
+Description:  解析报文中所有option
 Input:	      IN struct packet * packet		一个报文的dhcp包结构
 Output:       None
 Return:       
@@ -130,7 +130,7 @@ int parse_options
 Func Name :   parse_option_buffer
 Date Created: 2018/05/22
 Author:  	  wangzhe
-Description:  
+Description:  解析报文中的option到buffer
 Input:	      OUT struct option_state * options	  要解析到这个字段
 	`		  IN const unsigned char * buffer     options字段除去魔数后起始地址
 			  IN unsigned length				  从起始地址到END的长度，包含END
@@ -191,10 +191,15 @@ int parse_option_buffer
 		 */
 		/* dhcp_universe的get_length是取第一个字节的unsigned值 */
 		if (universe->get_length != NULL)
+		{
 			len = universe->get_length(buffer + offset);
+		}
 		else if (universe->length_size == 0)
+		{
 			len = length - universe->tag_size;
-		else {
+		}
+		else 
+		{
 			log_fatal("Improperly configured option space(%s): "
 				  "may not have a nonzero length size "
 				  "AND a NULL get_length function.",
@@ -301,6 +306,7 @@ int parse_option_buffer
 				return (0);
 			}
 
+			/* 是相同种类的option，直接使用op中保存的option就可以 */
 			option_reference(&nop->option, op->option, MDL);
 
 			nop->data.buffer = NULL;
@@ -315,8 +321,9 @@ int parse_option_buffer
 		option_dereference(&option, MDL);
 		offset += len;
 	}
-	buffer_dereference (&bp, MDL);
-	return (1);
+	
+	buffer_dereference(&bp, MDL);
+	return 1;
 }
 
 /* If an option in an option buffer turns out to be an encapsulation,
@@ -2537,6 +2544,7 @@ struct option_cache *lookup_hashed_option
 		if (((struct option_cache *)(bptr->car))->option->code == code)
 			return (struct option_cache *)(bptr->car);
 	}
+	
 	return (struct option_cache *)0;
 }
 
@@ -2675,9 +2683,9 @@ static int prepare_option_buffer
 		if (!option)
 			return 0;
 
-		option->format = default_option_format;
+		option->format   = default_option_format;
 		option->universe = universe;
-		option->code = code;
+		option->code     = code;
 
 		/* new_option() doesn't set references, pretend. */
 		option->refcnt = 1;
@@ -2718,9 +2726,9 @@ static int prepare_option_buffer
 	buffer_reference(&op->data.buffer, bp, MDL);
 
 	/* Point option cache into buffer. */
-	/* buffer是这个option的报文缓冲区，len是这个value的长度 */
+	/* buffer是整个option的报文缓冲区，len是这个value的长度 */
 	op->data.data = buffer;
-	op->data.len = length;
+	op->data.len  = length;
 
 	if (terminatep) 
 	{
@@ -2913,29 +2921,35 @@ void save_hashed_option
 		abort();
 
 	/* Compute the hash. */
-	hashix = compute_option_hash (oc -> option -> code);
+	hashix = compute_option_hash(oc->option->code);
 
 	/* If there's no hash table, make one. */
-	if (!hash) {
-		hash = (pair *)dmalloc (OPTION_HASH_SIZE * sizeof *hash, MDL);
-		if (!hash) {
+	if (!hash) 
+	{
+		hash = (pair *)dmalloc(OPTION_HASH_SIZE * sizeof(*hash), MDL);
+		if (!hash) 
+		{
 			log_error ("no memory to store %s.%s",
 				   universe -> name, oc -> option -> name);
 			return;
 		}
-		memset (hash, 0, OPTION_HASH_SIZE * sizeof *hash);
-		options -> universes [universe -> index] = (void *)hash;
-	} else {
+		
+		memset(hash, 0, OPTION_HASH_SIZE * sizeof(*hash));
+		options->universes[universe->index] = (void *)hash;
+	}
+	else 
+	{
 		/* Try to find an existing option matching the new one. */
-		for (bptr = hash [hashix]; bptr; bptr = bptr -> cdr) {
+		for (bptr = hash [hashix]; bptr; bptr = bptr->cdr) 
+		{
 			if (((struct option_cache *)
-			     (bptr -> car)) -> option -> code ==
-			    oc -> option -> code)
+			     (bptr->car))->option->code == oc->option->code)
 				break;
 		}
 
 		/* Deal with collisions on the hash list. */
-		if (bptr) {
+		if (bptr) 
+		{
 			ocloc = (struct option_cache **)&bptr->car;
 
 			/*
@@ -2943,11 +2957,14 @@ void save_hashed_option
 			 * ->next list.  If it is not set, rotate it into
 			 * position at the head of the list.
 			 */
-			if (appendp) {
+			if (appendp) 
+			{
 				do {
 					ocloc = &(*ocloc)->next;
 				} while (*ocloc != NULL);
-			} else {
+			}
+			else 
+			{
 				option_cache_dereference(ocloc, MDL);
 			}
 
@@ -2957,15 +2974,17 @@ void save_hashed_option
 	}
 
 	/* Otherwise, just put the new one at the head of the list. */
-	bptr = new_pair (MDL);
-	if (!bptr) {
-		log_error ("No memory for option_cache reference.");
+	bptr = new_pair(MDL);
+	if (!bptr) 
+	{
+		log_error("No memory for option_cache reference.");
 		return;
 	}
-	bptr -> cdr = hash [hashix];
-	bptr -> car = 0;
-	option_cache_reference ((struct option_cache **)&bptr -> car, oc, MDL);
-	hash [hashix] = bptr;
+	
+	bptr->cdr = hash[hashix];
+	bptr->car = 0;
+	option_cache_reference((struct option_cache **)&bptr->car, oc, MDL);
+	hash[hashix] = bptr;
 }
 
 void delete_option (universe, options, code)

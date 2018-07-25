@@ -72,7 +72,7 @@ void classify_client
 Func Name :   check_collection
 Date Created: 2018/07/24
 Author:  	  wangzhe
-Description:  挂接class到packet下
+Description:  检查packet匹配的calss，挂接class到packet下
 Input:	      
 Output:       
 Return:       void
@@ -92,6 +92,7 @@ int check_collection
 	int ignorep;
 	int classfound;
 
+	/* 遍历所有class，这个一般是全局变量collection提供的 */
 	for (class = collection->classes; class; class = class->nic) 
 	{
 #if defined (DEBUG_CLASS_MATCHING)
@@ -105,7 +106,7 @@ int check_collection
 		   expression, then we check the submatch.   If it's not a
 		   match, that's final - we don't check the submatch. */
 
-		if (class->expr) 
+		if (class->expr)
 		{
 			status = (evaluate_boolean_expression_result
 				  (&ignorep, packet, lease,
@@ -113,6 +114,7 @@ int check_collection
 				   packet->options, (struct option_state *)0,
 				   lease ? &lease->scope : &global_scope,
 				   class->expr));
+			/* 若检查布尔表达式的值是1，表示匹配了，建立packet到class的指针关系 */
 			if (status) 
 			{
 				if (!class->submatch) 

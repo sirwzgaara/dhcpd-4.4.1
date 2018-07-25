@@ -1380,7 +1380,7 @@ data_string_new(struct data_string *new_string,
 Func Name :   evaluate_option_cache
 Date Created: 2018/06/06
 Author:  	  wangzhe
-Description:  
+Description:  ¿½±´Ò»¸ödata_string
 Input:	      
 Output:       
 Return:       
