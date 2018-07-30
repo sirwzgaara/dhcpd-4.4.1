@@ -70,7 +70,6 @@ int parse_options
 	}
 
 	/* Go through the options field, up to the end of the packet or the End field. */
-	/* 若解析成功了，返回值为1，走不到这个分支 */
 	if (!parse_option_buffer(packet->options, &packet->raw->options[4],
 				  (packet->packet_length - DHCP_FIXED_NON_UDP - 4), &dhcp_universe)) 
 	{
@@ -101,7 +100,6 @@ int parse_options
 
 	/* If we parsed a DHCP Option Overload option, parse more
 	   options out of the buffer(s) containing them. */
-	/* 这个分支走不进来 */
 	if ((op = lookup_option(&dhcp_universe, packet->options, DHO_DHCP_OPTION_OVERLOAD))) 
 	{
 		if (op->data.data[0] & 1) 
@@ -237,14 +235,12 @@ int parse_option_buffer
 		   the option wasn't entirely an encapsulation
 		*/
 
-		/* 这个一般走不进去 */
 		if (option && (option->format[0] == 'e' || option->format[0] == 'E')) 
 		{
 			(void)parse_encapsulated_suboptions(options, option,
 							     bp->data + offset, len, universe, NULL);
 		}
 
-		/* discover报文只有53和55，这个走不进去 */
 		if (universe == &dhcp_universe && code == DHO_HOST_NAME && len == 0) 
 		{
 			/* non-compliant clients can send it
