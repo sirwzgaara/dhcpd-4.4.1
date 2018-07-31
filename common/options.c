@@ -251,7 +251,6 @@ int parse_option_buffer
 			continue;
 		}
 
-		/* 第一次找一个code，一定找不到，因为option->universe是初始化的，全是空的 */
 		op = lookup_option(universe, options, code);
 		if (op == NULL) 
 		{
@@ -2936,7 +2935,7 @@ void save_hashed_option
 	else 
 	{
 		/* Try to find an existing option matching the new one. */
-		for (bptr = hash [hashix]; bptr; bptr = bptr->cdr) 
+		for (bptr = hash[hashix]; bptr; bptr = bptr->cdr) 
 		{
 			if (((struct option_cache *)
 			     (bptr->car))->option->code == oc->option->code)
