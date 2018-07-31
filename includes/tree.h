@@ -80,9 +80,10 @@ struct data_string {
 	int terminated;
 };
 
+//表达式类型
 enum expression_context {
 	context_any, /* indefinite */
-	context_boolean,
+	context_boolean,	//布尔表达式
 	context_data,
 	context_numeric,
 	context_dns,
@@ -342,6 +343,7 @@ struct universe {
 	int concat_duplicates;
 };
 
+/* option的已知属性，比如名字和格式等，是不随着报文改变的固定属性 */
 struct option {
 	const char *name;
 	const char *format;

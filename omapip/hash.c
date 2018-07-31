@@ -528,7 +528,7 @@ void delete_hash_entry (table, key, len, file, line)
 Func Name :   hash_lookup
 Date Created: 2018/05/22
 Author: 	  wangzhe
-Description:  在hash表中寻找字段
+Description:  在hash表中寻找元素并用vp接收
 Input:		  
 Output: 	  
 Return: 	  (int)0
@@ -561,6 +561,7 @@ int hash_lookup
 	/* do_hash，依据不同hash类型的key，如number，string等计算index */
 	hashno = (*table->do_hash)(key, len, table->hash_count);
 
+	/* 找到特定hash桶，遍历链表找要找的元素 */
 	for (bp = table->buckets[hashno]; bp; bp = bp->next) 
 	{
 		/* 若找到了 */
@@ -577,6 +578,7 @@ int hash_lookup
 			return 1;
 		}
 	}
+	
 	return 0;
 }
 

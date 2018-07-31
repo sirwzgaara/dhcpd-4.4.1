@@ -1211,6 +1211,7 @@ isc_result_t parse_option_name
 		log_fatal("no memory for uname information.");
 	
 	strcpy(uname, val);
+	/* 看下一个token是什么但是不消耗 */
 	token = peek_token(&val, (unsigned *)0, cfile);
 	if (token == DOT) 
 	{
@@ -1248,6 +1249,7 @@ isc_result_t parse_option_name
 	}
 
 	/* Look up the actual option info... */
+	/* 在这里面会挂接opt到struct option */
 	option_name_hash_lookup(opt, universe->name_hash, val, 0, MDL);
 	option = *opt;
 
@@ -3636,6 +3638,7 @@ int parse_non_binary
 	isc_result_t status;
 	unsigned len;
 
+	/* 取表达式的下一个部分 */
 	token = peek_token(&val, (unsigned *)0, cfile);
 
 	/* Check for unary operators... */
@@ -4555,8 +4558,9 @@ int parse_expression
 {
 	enum dhcp_token token;
 	const char *val;
-	struct expression *rhs = (struct expression *)0, *tmp;
-	struct expression *lhs = (struct expression *)0;
+	struct expression *rhs = (struct expression *)0;	//右边表达式
+	struct expression *lhs = (struct expression *)0;	//左边表达式
+	struct expression *tmp;
 	enum expr_op next_op;
 	enum expression_context
 		lhs_context = context_any,
@@ -4570,6 +4574,7 @@ int parse_expression
 	}
 
       new_rhs:
+	/* 先解析到右边表达式，若没有左边，后面会移动到左边 */
 	if (!parse_non_binary(&rhs, cfile, lose, context)) 
 	{
 		/* If we already have a left-hand side, then it's not
@@ -4710,7 +4715,8 @@ int parse_expression
 			*expr = rhs;
 			return 1;
 		}
-		
+
+		/* 将右边赋值给左边，然后重新开始解析右边 */
 		lhs = rhs;
 		rhs = (struct expression *)0;
 		binop = next_op;
@@ -4746,7 +4752,7 @@ int parse_expression
 		next_op = expr_none;
 	}
 
-	/* 若是二元运算符 */
+	/* 若是二元运算符，判断出现在二元运算符两端的表达式是否符合条件，比如类型匹配等 */
 	if (binop != expr_none) 
 	{
 		rhs_context = expression_context(rhs);

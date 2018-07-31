@@ -665,7 +665,8 @@ int evaluate_expression
 
 		if (!bv)
 			return 1;
-        }
+    }
+	/* 若是布尔表达式 */
 	else if (is_boolean_expression(expr)) 
 	{
 		if (!binding_value_allocate(&bv, MDL))
@@ -682,7 +683,8 @@ int evaluate_expression
 		status = (evaluate_numeric_expression
 			  (&bv -> value.intval, packet, lease, client_state,
 			   in_options, cfg_options, scope, expr));
-	} 
+	}
+	/* 若是data，比如字符串或者option之类的 */
 	else if (is_data_expression(expr)) 
 	{
 		if (!binding_value_allocate(&bv, MDL))
@@ -819,6 +821,7 @@ int evaluate_boolean_expression
 				    break;
 
 				  case binding_data:
+				  	/* 若是数据类型，判断长度和字符串值 */
 				    if ((bv->value.data.len == obv->value.data.len) &&
 						!memcmp(bv->value.data.data,
 							 obv->value.data.data,
@@ -3135,21 +3138,24 @@ void expression_dereference (eptr, file, line)
 	free_expression (expr, MDL);
 }
 
-int is_boolean_expression (expr)
-	struct expression *expr;
+/* 判断是否是布尔表达式 */
+int is_boolean_expression
+(
+	struct expression *expr
+)
 {
-	return (expr -> op == expr_check ||
-		expr -> op == expr_exists ||
-		expr -> op == expr_variable_exists ||
-		expr -> op == expr_equal ||
-		expr -> op == expr_not_equal ||
+	return (expr->op == expr_check ||
+		expr->op == expr_exists ||
+		expr->op == expr_variable_exists ||
+		expr->op == expr_equal ||
+		expr->op == expr_not_equal ||
 		expr->op == expr_regex_match ||
 		expr->op == expr_iregex_match ||
-		expr -> op == expr_and ||
-		expr -> op == expr_or ||
-		expr -> op == expr_not ||
-		expr -> op == expr_known ||
-		expr -> op == expr_static);
+		expr->op == expr_and ||
+		expr->op == expr_or ||
+		expr->op == expr_not ||
+		expr->op == expr_known ||
+		expr->op == expr_static);
 }
 
 int is_data_expression (expr)
