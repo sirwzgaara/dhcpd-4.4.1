@@ -2512,7 +2512,7 @@ Input:	      IN struct universe * universe		全局universe比如dhcp_unvierse
 			  IN unsigned code					option号，比如dhcp_type是53
 Output:       
 Return:       struct option_cache *
-Caution : 	  	
+Caution : 	  调用者保证已经给hash申请过内存了，此函数会大量调用，不在函数内部进行检查
 *********************************************************************/
 struct option_cache *lookup_hashed_option
 (
@@ -2865,9 +2865,12 @@ build_server_oro(struct data_string *server_oro,
 }
 
 /* Wrapper function to put an option cache into an option state. */
-void
-save_option(struct universe *universe, struct option_state *options,
-	    struct option_cache *oc)
+void save_option
+(
+	struct universe *universe, 
+	struct option_state *options,
+	struct option_cache *oc
+)
 {
 	if (universe->save_func)
 		(*universe->save_func)(universe, options, oc, ISC_FALSE);
@@ -2892,8 +2895,8 @@ Date Created: 2018/06/06
 Author:  	  wangzhe
 Description:  dhcp_universe的save_hash函数
 Input:	      IN strcut universe * universe
-			  IN struct option_state * option
-			  IN struct option_cache * oc
+			  IN struct option_state * option	packet->option
+			  IN struct option_cache * oc		本次要添加的option
 			  IN iscboolean_t appendp
 Output:       
 Return:       void
@@ -2921,11 +2924,12 @@ void save_hashed_option
 	/* If there's no hash table, make one. */
 	if (!hash) 
 	{
+		/* 一共OPTION_HASH_SIZE个桶 */
 		hash = (pair *)dmalloc(OPTION_HASH_SIZE * sizeof(*hash), MDL);
 		if (!hash) 
 		{
 			log_error ("no memory to store %s.%s",
-				   universe -> name, oc -> option -> name);
+				   universe->name, oc->option->name);
 			return;
 		}
 		
@@ -2975,7 +2979,8 @@ void save_hashed_option
 		log_error("No memory for option_cache reference.");
 		return;
 	}
-	
+
+	/* 加入链表头 */
 	bptr->cdr = hash[hashix];
 	bptr->car = 0;
 	option_cache_reference((struct option_cache **)&bptr->car, oc, MDL);
@@ -2994,49 +2999,53 @@ void delete_option (universe, options, code)
 			   universe -> name);
 }
 
-void delete_hashed_option (universe, options, code)
-	struct universe *universe;
-	struct option_state *options;
-	int code;
+void delete_hashed_option
+(
+	struct universe *universe,
+	struct option_state *options,
+	int code
+)
 {
 	int hashix;
 	pair bptr, prev = (pair)0;
-	pair *hash = options -> universes [universe -> index];
+	pair *hash = options->universes[universe->index];
 
 	/* There may not be any options in this space. */
 	if (!hash)
 		return;
 
 	/* Try to find an existing option matching the new one. */
-	hashix = compute_option_hash (code);
-	for (bptr = hash [hashix]; bptr; bptr = bptr -> cdr) {
-		if (((struct option_cache *)(bptr -> car)) -> option -> code
-		    == code)
+	hashix = compute_option_hash(code);
+	for (bptr = hash [hashix]; bptr; bptr = bptr->cdr) 
+	{
+		if (((struct option_cache *)(bptr->car))->option->code == code)
 			break;
 		prev = bptr;
 	}
 	/* If we found one, wipe it out... */
-	if (bptr) {
+	if (bptr) 
+	{
 		if (prev)
-			prev -> cdr = bptr -> cdr;
+			prev->cdr = bptr->cdr;
 		else
-			hash [hashix] = bptr -> cdr;
-		option_cache_dereference
-			((struct option_cache **)(&bptr -> car), MDL);
-		free_pair (bptr, MDL);
+			hash[hashix] = bptr->cdr;
+		option_cache_dereference((struct option_cache **)(&bptr->car), MDL);
+		free_pair(bptr, MDL);
 	}
 }
 
 extern struct option_cache *free_option_caches; /* XXX */
 
-int option_cache_dereference (ptr, file, line)
-	struct option_cache **ptr;
-	const char *file;
-	int line;
+int option_cache_dereference
+(
+	struct option_cache **ptr,
+	const char *file,
+	int line
+)
 {
-	if (!ptr || !*ptr) {
-		log_error ("Null pointer in option_cache_dereference: %s(%d)",
-			   file, line);
+	if (!ptr || !*ptr) 
+	{
+		log_error("Null pointer in option_cache_dereference: %s(%d)", file, line);
 #if defined (POINTER_DEBUG)
 		abort ();
 #else
@@ -3044,26 +3053,26 @@ int option_cache_dereference (ptr, file, line)
 #endif
 	}
 
-	(*ptr) -> refcnt--;
-	rc_register (file, line, ptr, *ptr, (*ptr) -> refcnt, 1, RC_MISC);
-	if (!(*ptr) -> refcnt) {
-		if ((*ptr) -> data.buffer)
-			data_string_forget (&(*ptr) -> data, file, line);
+	(*ptr)->refcnt--;
+	rc_register(file, line, ptr, *ptr, (*ptr)->refcnt, 1, RC_MISC);
+	if (!(*ptr)->refcnt) 
+	{
+		if ((*ptr)->data.buffer)
+			data_string_forget(&(*ptr)->data, file, line);
 		if ((*ptr)->option)
 			option_dereference(&(*ptr)->option, MDL);
-		if ((*ptr) -> expression)
-			expression_dereference (&(*ptr) -> expression,
-						file, line);
-		if ((*ptr) -> next)
-			option_cache_dereference (&((*ptr) -> next),
-						  file, line);
+		if ((*ptr)->expression)
+			expression_dereference(&(*ptr)->expression, file, line);
+		if ((*ptr)->next)
+			option_cache_dereference(&((*ptr)->next), file, line);
 		/* Put it back on the free list... */
-		(*ptr) -> expression = (struct expression *)free_option_caches;
+		(*ptr)->expression = (struct expression *)free_option_caches;
 		free_option_caches = *ptr;
-		dmalloc_reuse (free_option_caches, (char *)0, 0, 0);
+		dmalloc_reuse(free_option_caches, (char *)0, 0, 0);
 	}
-	if ((*ptr) -> refcnt < 0) {
-		log_error ("%s(%d): negative refcnt!", file, line);
+	if ((*ptr)->refcnt < 0) 
+	{
+		log_error("%s(%d): negative refcnt!", file, line);
 #if defined (DEBUG_RC_HISTORY)
 		dump_rc_history (*ptr);
 #endif
@@ -3076,7 +3085,6 @@ int option_cache_dereference (ptr, file, line)
 	}
 	*ptr = (struct option_cache *)0;
 	return 1;
-
 }
 
 int hashed_option_state_dereference (universe, state, file, line)
