@@ -704,14 +704,15 @@ void parse_lease_time (cfile, timep)
  */
 
 
-unsigned char *parse_numeric_aggregate (cfile, buf,
-					max, separator, base, size)
-	struct parse *cfile;
-	unsigned char *buf;
-	unsigned *max;
-	int separator;
-	int base;
-	unsigned size;
+unsigned char *parse_numeric_aggregate 
+(
+	struct parse *cfile,
+	unsigned char *buf,
+	unsigned *max,
+	int separator,
+	int base,
+	unsigned size
+)
 {
 	const char *val;
 	enum dhcp_token token;
