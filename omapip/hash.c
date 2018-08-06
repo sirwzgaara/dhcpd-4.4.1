@@ -73,17 +73,17 @@ int new_hash_table
 	struct hash_table *rval;
 	unsigned extra;
 
-	if (!tp) {
-		log_error ("%s(%d): new_hash_table called with null pointer.",
-			   file, line);
+	if (!tp) 
+	{
+		log_error("%s(%d): new_hash_table called with null pointer.", file, line);
 #if defined (POINTER_DEBUG)
 		abort ();
 #endif
 		return 0;
 	}
-	if (*tp) {
-		log_error ("%s(%d): non-null target for new_hash_table.",
-			   file, line);
+	if (*tp) 
+	{
+		log_error("%s(%d): non-null target for new_hash_table.", file, line);
 #if defined (POINTER_DEBUG)
 		abort ();
 #endif
@@ -102,8 +102,10 @@ int new_hash_table
 		       (extra * sizeof(struct hash_bucket *)), file, line);
 	if (!rval)
 		return 0;
+
 	rval->hash_count = count;
 	*tp = rval;
+
 	return 1;
 }
 
@@ -214,22 +216,26 @@ struct hash_bucket *new_hash_bucket (file, line)
 	return rval;
 }
 
-void free_hash_bucket (ptr, file, line)
-	struct hash_bucket *ptr;
-	const char *file;
-	int line;
+void free_hash_bucket
+(
+	struct hash_bucket *ptr,
+	const char *file,
+	int line
+)
 {
 #if defined (DEBUG_MALLOC_POOL)
 	struct hash_bucket *hp;
 
-	for (hp = free_hash_buckets; hp; hp = hp -> next) {
-		if (hp == ptr) {
+	for (hp = free_hash_buckets; hp; hp = hp->next) 
+	{
+		if (hp == ptr) 
+		{
 			log_error ("hash bucket freed twice!");
 			abort ();
 		}
 	}
 #endif
-	ptr -> next = free_hash_buckets;
+	ptr->next = free_hash_buckets;
 	free_hash_buckets = ptr;
 }
 
@@ -243,12 +249,16 @@ Output:       None
 Return:       void
 Caution : 	  	
 *********************************************************************/
-int new_hash(struct hash_table **rp,
-	     hash_reference referencer,
-	     hash_dereference dereferencer,
-	     unsigned hsize,
-	     unsigned (*hasher)(const void *, unsigned, unsigned),
-	     const char *file, int line)
+int new_hash
+(
+	struct hash_table **rp,
+	hash_reference referencer,
+    hash_dereference dereferencer,
+    unsigned hsize,
+    unsigned (*hasher)(const void *, unsigned, unsigned),
+    const char *file, 
+    int line
+)
 {
 	if (hsize == 0)
 		hsize = DEFAULT_HASH_SIZE;
@@ -296,8 +306,7 @@ do_case_hash(const void *name, unsigned len, unsigned size)
 	return accum % size;
 }
 
-unsigned
-do_string_hash(const void *name, unsigned len, unsigned size)
+unsigned do_string_hash(const void *name, unsigned len, unsigned size)
 {
 	register unsigned accum = 0;
 	register const unsigned char *s = (const unsigned char *)name;
@@ -440,8 +449,8 @@ Caution :
 void add_hash 
 (
 	struct hash_table *table,
-	unsigned len,
 	const void *key,
+	unsigned len,
 	hashed_object_t *pointer,
 	const char *file,
 	int line
@@ -483,12 +492,14 @@ void add_hash
 	table->buckets[hashno] = bp;
 }
 
-void delete_hash_entry (table, key, len, file, line)
-	struct hash_table *table;
-	unsigned len;
-	const void *key;
-	const char *file;
-	int line;
+void delete_hash_entry
+(
+	struct hash_table *table,
+	const void *key,
+	unsigned len,
+	const char *file,
+	int line
+)
 {
 	int hashno;
 	struct hash_bucket *bp, *pbp = (struct hash_bucket *)0;
@@ -504,21 +515,26 @@ void delete_hash_entry (table, key, len, file, line)
 
 	/* Go through the list looking for an entry that matches;
 	   if we find it, delete it. */
-	for (bp = table -> buckets [hashno]; bp; bp = bp -> next) {
-		if ((!bp -> len &&
-		     !strcmp ((const char *)bp->name, key)) ||
-		    (bp -> len == len &&
-		     !(table -> cmp)(bp->name, key, len))) {
-			if (pbp) {
-				pbp -> next = bp -> next;
-			} else {
-				table -> buckets [hashno] = bp -> next;
+	for (bp = table->buckets[hashno]; bp; bp = bp->next) 
+	{
+		if ((!bp->len && !strcmp((const char *)bp->name, key)) ||
+		    (bp->len == len && !(table->cmp)(bp->name, key, len))) 
+		{
+			if (pbp) 
+			{
+				pbp->next = bp->next;
+			} 
+			else 
+			{
+				table->buckets[hashno] = bp->next;
 			}
-			if (bp -> value && table -> dereferencer) {
-				foo = &bp -> value;
-				(*(table -> dereferencer)) (foo, file, line);
+
+			if (bp->value && table->dereferencer) 
+			{
+				foo = &bp->value;
+				(*(table->dereferencer))(foo, file, line);
 			}
-			free_hash_bucket (bp, file, line);
+			free_hash_bucket(bp, file, line);
 			break;
 		}
 		pbp = bp;	/* jwg, 9/6/96 - nice catch! */
