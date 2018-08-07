@@ -922,7 +922,7 @@ void hubeiguangdian
 	int hashidx = HASH_INDEX_INVALID;
 	struct cache_container *p = &cache_container;
 	struct dict * dict = NULL;
-	int overfue = 0;
+	int overdue = 0;
 
 	/* get cm_mac from option82 */
 	if (!get_option82_suboption_value(packet, AGENT_REMOTE_ID, cm_mac) || !cm_mac)
@@ -937,7 +937,22 @@ void hubeiguangdian
 	/* find a dict but overdued, refresh it */
 	if (dict && overdue)
 	{
-		
+		/* select which class to obtain from option60 */
+		select_class(packet, class_name);
+		if (!class_name)
+		{
+			log_error("%s(%d): null pointer class_name", MDL);
+			goto clean;
+		}
+
+		if (!get_class_from_ldap(cm_mac, class_name, class_value) || !class_value)
+		{
+			log_info("can not get class from ldap, cm_mac %s, class_name %s",
+					cm_mac->data, class_name->data);
+			goto clean;
+		}
+
+		dict_refresh(dict, class_value);
 	}
 	/* not overdued, obtain class_value from dict */
 	else if (dict)
@@ -947,7 +962,6 @@ void hubeiguangdian
 	/* nothing in cache, try access ldap server */
 	else
 	{
-		/* select which class to obtain from option60 */
 		select_class(packet, class_name);
 		if (!class_name)
 		{
@@ -985,6 +999,7 @@ void hubeiguangdian
 
 	return;
 }
+
 
 int hubeiguangdian_initialize()
 {
