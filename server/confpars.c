@@ -876,9 +876,11 @@ int parse_statement
 
 	      case OPTION:
 		skip_token(&val, (unsigned *)0, cfile);
-		token = peek_token (&val, (unsigned *)0, cfile);
-		if (token == SPACE) {
-			if (type != ROOT_GROUP) {
+		token = peek_token(&val, (unsigned *)0, cfile);
+		if (token == SPACE)
+		{
+			if (type != ROOT_GROUP) 
+			{
 				parse_warn (cfile,
 					    "option space definitions %s",
 					    "may not be scoped.");
@@ -891,10 +893,13 @@ int parse_statement
 
 		known = 0;
 		status = parse_option_name(cfile, 1, &known, &option);
-		if (status == ISC_R_SUCCESS) {
-			token = peek_token (&val, (unsigned *)0, cfile);
-			if (token == CODE) {
-				if (type != ROOT_GROUP) {
+		if (status == ISC_R_SUCCESS) 
+		{
+			token = peek_token(&val, (unsigned *)0, cfile);
+			if (token == CODE) 
+			{
+				if (type != ROOT_GROUP) 
+				{
 					parse_warn (cfile,
 						    "option definitions%s",
 						    " may not be scoped.");
@@ -924,7 +929,8 @@ int parse_statement
 
 			/* If this wasn't an option code definition, don't
 			   allow an unknown option. */
-			if (!known) {
+			if (!known) 
+			{
 				parse_warn (cfile, "unknown option %s.%s",
 					    option -> universe -> name,
 					    option -> name);
@@ -935,10 +941,12 @@ int parse_statement
 
 		      finish_option:
 			et = (struct executable_statement *)0;
-			if (!parse_option_statement
-				(&et, cfile, 1, option,
+			if (!parse_option_statement(&et, cfile, 1, option,
 				 supersede_option_statement))
+			{
 				return declaration;
+			}
+
 			option_dereference(&option, MDL);
 			goto insert_statement;
 		} else
@@ -999,20 +1007,20 @@ int parse_statement
 		if (!et)
 			return declaration;
 	      insert_statement:
-		if (group -> statements) {
+		if (group->statements) 
+		{
 			int multi = 0;
 
 			/* If this set of statements is only referenced
 			   by this group, just add the current statement
 			   to the end of the chain. */
-			for (ep = group -> statements; ep -> next;
-			     ep = ep -> next)
-				if (ep -> refcnt > 1) /* XXX */
+			for (ep = group->statements; ep->next; ep = ep->next)
+				if (ep->refcnt > 1) /* XXX */
 					multi = 1;
-			if (!multi) {
-				executable_statement_reference (&ep -> next,
-								et, MDL);
-				executable_statement_dereference (&et, MDL);
+			if (!multi) 
+			{
+				executable_statement_reference(&ep->next, et, MDL);
+				executable_statement_dereference(&et, MDL);
 				return declaration;
 			}
 
@@ -1022,21 +1030,18 @@ int parse_statement
 			ep = (struct executable_statement *)0;
 			if (!executable_statement_allocate (&ep, MDL))
 				log_fatal ("No memory for statements.");
-			ep -> op = statements_statement;
-			executable_statement_reference (&ep -> data.statements,
-							group -> statements,
-							MDL);
-			executable_statement_reference (&ep -> next, et, MDL);
-			executable_statement_dereference (&group -> statements,
-							  MDL);
-			executable_statement_reference (&group -> statements,
-							ep, MDL);
+			ep->op = statements_statement;
+			executable_statement_reference(&ep->data.statements, group->statements, MDL);
+			executable_statement_reference(&ep->next, et, MDL);
+			executable_statement_dereference(&group->statements, MDL);
+			executable_statement_reference(&group->statements, ep, MDL);
 			executable_statement_dereference (&ep, MDL);
-		} else {
-			executable_statement_reference (&group -> statements,
-							et, MDL);
 		}
-		executable_statement_dereference (&et, MDL);
+		else 
+		{
+			executable_statement_reference(&group->statements, et, MDL);
+		}
+		executable_statement_dereference(&et, MDL);
 		return declaration;
 	}
 

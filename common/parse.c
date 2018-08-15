@@ -1298,13 +1298,15 @@ isc_result_t parse_option_name
 		 * deleted once the option is recycled out of
 		 * existence (by the parent).
 		 */
-		if (option == NULL) {
+		if (option == NULL) 
+		{
 			option = new_option(val, MDL);
 			option->universe = universe;
 			option->code = code;
 			option->format = default_option_format;
 			option_reference(opt, option, MDL);
-		} else
+		} 
+		else
 			log_info("option %s has been redefined as option %s.  "
 				 "Please update your configs if necessary.",
 				 val, option->name);
@@ -4886,11 +4888,13 @@ int parse_expression
 }	
 
 
-int parse_option_data (expr, cfile, lookups, option)
-struct expression **expr;
-struct parse *cfile;
-int lookups;
-struct option *option;
+int parse_option_data
+(
+	struct expression **expr,
+	struct parse *cfile,
+	int lookups,
+	struct option *option
+)
 {
 	const char *val;
 	const char *fmt = NULL;
@@ -4948,7 +4952,8 @@ struct option *option;
 			*expr = NULL;
 
 			if (!parse_option_token(expr, cfile, &fmt, tmp,
-						uniform, lookups)) {
+						uniform, lookups)) 
+			{
 				if (fmt [1] != 'o') {
 					if (tmp)
 						expression_dereference (&tmp,
@@ -4958,16 +4963,18 @@ struct option *option;
 				*expr = tmp;
 				tmp = NULL;
 			}
-			if (tmp)
-				expression_dereference (&tmp, MDL);
+			if(tmp)
+				expression_dereference(&tmp, MDL);
 
 			fmt++;
 		} while (*fmt != '\0');
 
-		if ((*fmt == 'A') || (*fmt == 'a')) {
-			token = peek_token (&val, (unsigned *)0, cfile);
+		if ((*fmt == 'A') || (*fmt == 'a')) 
+		{
+			token = peek_token(&val, (unsigned *)0, cfile);
 			/* Comma means: continue with next element in array */
-			if (token == COMMA) {
+			if (token == COMMA) 
+			{
 				skip_token(&val, (unsigned *)0, cfile);
 				continue;
 			}
@@ -4983,7 +4990,7 @@ struct option *option;
 		}
 	} while ((*fmt == 'A') || (*fmt == 'a'));
 
-        return 1;
+    return 1;
 }
 
 /* option-statement :== identifier DOT identifier <syntax> SEMI
@@ -4993,20 +5000,23 @@ struct option *option;
    would be painful to come up with BNF for it.   However, it always
    starts as above and ends in a SEMI. */
 
-int parse_option_statement (result, cfile, lookups, option, op)
-	struct executable_statement **result;
-	struct parse *cfile;
-	int lookups;
-	struct option *option;
-	enum statement_op op;
+int parse_option_statement
+(
+	struct executable_statement **result,
+	struct parse *cfile,
+	int lookups,
+	struct option *option,
+	enum statement_op op
+)
 {
 	const char *val;
 	enum dhcp_token token;
 	struct expression *expr = (struct expression *)0;
 	int lose;
 
-	token = peek_token (&val, (unsigned *)0, cfile);
-	if ((token == SEMI) && (option->format[0] != 'Z')) {
+	token = peek_token(&val, (unsigned *)0, cfile);
+	if ((token == SEMI) && (option->format[0] != 'Z')) 
+	{
 		/* Eat the semicolon... */
 		/*
 		 * XXXSK: I'm not sure why we should ever get here, but we 
@@ -5015,7 +5025,9 @@ int parse_option_statement (result, cfile, lookups, option, op)
 		 * 	  eat the semicolon token in that case.
 		 */
 		skip_token(&val, (unsigned *)0, cfile);
-	} else if (token == EQUAL) {
+	} 
+	else if (token == EQUAL) 
+	{
 		/* Eat the equals sign. */
 		skip_token(&val, (unsigned *)0, cfile);
 
@@ -5031,23 +5043,25 @@ int parse_option_statement (result, cfile, lookups, option, op)
 			}
 			return 0;
 		}
-	} else {
-		if (! parse_option_data(&expr, cfile, lookups, option))
+	} 
+	else 
+	{
+		if (!parse_option_data(&expr, cfile, lookups, option))
 			return 0;
 	}
 
-	if (!parse_semi (cfile))
+	if (!parse_semi(cfile))
 		return 0;
-	if (!executable_statement_allocate (result, MDL))
-		log_fatal ("no memory for option statement.");
 
-        (*result)->op = op;
-	if (expr && !option_cache (&(*result)->data.option,
-				   NULL, expr, option, MDL))
-		log_fatal ("no memory for option cache");
+	if (!executable_statement_allocate(result, MDL))
+		log_fatal("no memory for option statement.");
+
+    (*result)->op = op;
+	if (expr && !option_cache(&(*result)->data.option, NULL, expr, option, MDL))
+		log_fatal("no memory for option cache");
 
 	if (expr)
-		expression_dereference (&expr, MDL);
+		expression_dereference(&expr, MDL);
 
 	return 1;
 }
