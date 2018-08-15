@@ -1340,34 +1340,37 @@ isc_result_t parse_option_name
  *             CODE WIDTH NUMBER
  */
 
-void parse_option_space_decl (cfile)
-	struct parse *cfile;
+void parse_option_space_decl
+(
+	struct parse *cfile
+)
 {
 	int token;
 	const char *val;
 	struct universe **ua, *nu;
 	char *nu_name;
-	int tsize=1, lsize=1, hsize = 0;
+	int tsize = 1, lsize = 1, hsize = 0;
 
 	skip_token(&val, (unsigned *)0, cfile);  /* Discard the SPACE token,
 						     which was checked by the
 						     caller. */
-	token = next_token (&val, (unsigned *)0, cfile);
-	if (!is_identifier (token)) {
-		parse_warn (cfile, "expecting identifier.");
-		skip_to_semi (cfile);
+	token = next_token(&val, (unsigned *)0, cfile);
+	if (!is_identifier(token)) 
+	{
+		parse_warn(cfile, "expecting identifier.");
+		skip_to_semi(cfile);
 		return;
 	}
-	nu = new_universe (MDL);
+	nu = new_universe(MDL);
 	if (!nu)
 		log_fatal ("No memory for new option space.");
 
 	/* Set up the server option universe... */
-	nu_name = dmalloc (strlen (val) + 1, MDL);
+	nu_name = dmalloc(strlen(val) + 1, MDL);
 	if (!nu_name)
-		log_fatal ("No memory for new option space name.");
-	strcpy (nu_name, val);
-	nu -> name = nu_name;
+		log_fatal("No memory for new option space name.");
+	strcpy(nu_name, val);
+	nu->name = nu_name;
 
 	do {
 		token = next_token(&val, NULL, cfile);

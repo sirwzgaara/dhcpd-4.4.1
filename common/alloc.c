@@ -339,7 +339,7 @@ struct universe *new_universe (file, line)
 	int line;
 {
 	struct universe *rval =
-		dmalloc (sizeof (struct universe), file, line);
+		dmalloc(sizeof (struct universe), file, line);
 	return rval;
 }
 
