@@ -2226,7 +2226,7 @@ void parse_host_declaration
 	host = (struct host_decl *)0;
 	status = host_allocate(&host, MDL);
 	if (status != ISC_R_SUCCESS)
-		log_fatal ("can't allocate host decl struct %s: %s",
+		log_fatal("can't allocate host decl struct %s: %s",
 			   name, isc_result_totext (status));
 	host->name = name;
 	if (!clone_group(&host->group, group, MDL)) 

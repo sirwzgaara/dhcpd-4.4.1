@@ -377,8 +377,20 @@ enum dhcp_token {
 	TOKEN_HEX = 677,
 	TOKEN_OCTAL = 678,
 	KEY_ALGORITHM = 679,
-	DIT = 680,
-    DIT_COUNT = 681
+	LPS_ENABLE = 680,
+        LPS_INTERVAL = 681,
+        MAX_LPS = 682,
+        FP_ENABLE = 683,
+        AIO_ENABLE = 684,
+        DIT = 685,
+        DIT_COUNT = 686,
+    LDAPDHCP = 687,
+    CONFIGURATION = 688,
+    ROOT_DN = 689,
+    FIND_DC = 690,
+    MAP = 691,
+    PWD = 692,
+    FILTER = 693
 };
 
 #define is_identifier(x)	((x) >= FIRST_TOKEN &&	\

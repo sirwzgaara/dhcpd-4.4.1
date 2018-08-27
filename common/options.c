@@ -325,40 +325,53 @@ int parse_option_buffer
    figure out what to do.   If we don't know how to de-encapsulate it,
    or it's not well-formed, return zero; otherwise, return 1, indicating
    that we succeeded in de-encapsulating it. */
-
-struct universe *find_option_universe (struct option *eopt, const char *uname)
+struct universe *find_option_universe 
+(
+	struct option *eopt, 
+	const char *uname
+)
 {
 	int i;
 	char *s, *t;
 	struct universe *universe = (struct universe *)0;
 
 	/* Look for the E option in the option format. */
-	s = strchr (eopt -> format, 'E');
-	if (!s) {
+	s = strchr(eopt->format, 'E');
+	if (!s) 
+	{
 		log_error ("internal encapsulation format error 1.");
 		return 0;
 	}
 	/* Look for the universe name in the option format. */
-	t = strchr (++s, '.');
+	t = strchr(++s, '.');
 	/* If there was no trailing '.', or there's something after the
 	   trailing '.', the option is bogus and we can't use it. */
-	if (!t || t [1]) {
+	if (!t || t[1]) 
+	{
 		log_error ("internal encapsulation format error 2.");
 		return 0;
 	}
-	if (t == s && uname) {
-		for (i = 0; i < universe_count; i++) {
-			if (!strcmp (universes [i] -> name, uname)) {
-				universe = universes [i];
+	
+	if (t == s && uname) 
+	{
+		for (i = 0; i < universe_count; i++) 
+		{
+			if (!strcmp (universes[i]->name, uname)) 
+			{
+				universe = universes[i];
 				break;
 			}
 		}
-	} else if (t != s) {
-		for (i = 0; i < universe_count; i++) {
-			if (strlen (universes [i] -> name) == t - s &&
-			    !memcmp (universes [i] -> name,
-				     s, (unsigned)(t - s))) {
-				universe = universes [i];
+	} 
+	else if (t != s) 
+	{
+		for (i = 0; i < universe_count; i++) 
+		{
+			if (strlen(universes[i]->name) == t - s &&
+			    !memcmp(universes [i]->name,
+				     s, (unsigned)(t - s))) 
+			{
+				universe = universes[i];
 				break;
 			}
 		}
@@ -371,14 +384,17 @@ struct universe *find_option_universe (struct option *eopt, const char *uname)
    or it's not well-formed, return zero; otherwise, return 1, indicating
    that we succeeded in de-encapsulating it. */
 
-int parse_encapsulated_suboptions (struct option_state *options,
-				   struct option *eopt,
-				   const unsigned char *buffer,
-				   unsigned len, struct universe *eu,
-				   const char *uname)
+int parse_encapsulated_suboptions 
+(
+	struct option_state *options,
+	struct option *eopt,
+	const unsigned char *buffer,
+	unsigned len, struct universe *eu,
+	const char *uname
+)
 {
 	int i;
-	struct universe *universe = find_option_universe (eopt, uname);
+	struct universe *universe = find_option_universe(eopt, uname);
 
 	/* If we didn't find the universe, we can't do anything with it
 	   right now (e.g., we can't decode vendor options until we've
@@ -388,13 +404,13 @@ int parse_encapsulated_suboptions (struct option_state *options,
 
 	/* If we don't have a decoding function for it, we can't decode
 	   it. */
-	if (!universe -> decode)
+	if (!universe->decode)
 		return 0;
 
-	i = (*universe -> decode) (options, buffer, len, universe);
+	i = (*universe->decode) (options, buffer, len, universe);
 
 	/* If there is stuff before the suboptions, we have to keep it. */
-	if (eopt -> format [0] != 'E')
+	if (eopt->format [0] != 'E')
 		return 0;
 	/* Otherwise, return the status of the decode function. */
 	return i;
@@ -3954,37 +3970,49 @@ void hashed_option_space_foreach (struct packet *packet, struct lease *lease,
 	}
 }
 
-void
-save_linked_option(struct universe *universe, struct option_state *options,
-		   struct option_cache *oc, isc_boolean_t appendp)
+/* 保存option到agent_universe */
+void save_linked_option
+(
+	struct universe *universe, 
+	struct option_state *options,
+	struct option_cache *oc, 
+	isc_boolean_t appendp
+)
 {
 	pair *tail;
 	struct option_chain_head *head;
 	struct option_cache **ocloc;
 
-	if (universe -> index >= options -> universe_count)
+	if (universe->index >= options->universe_count)
 		return;
-	head = ((struct option_chain_head *)
-		options -> universes [universe -> index]);
-	if (!head) {
-		if (!option_chain_head_allocate (((struct option_chain_head **)
-						  &options -> universes
-						  [universe -> index]), MDL))
+
+	head = ((struct option_chain_head *)options->universes[universe->index]);
+	if (!head) 
+	{
+		if (!option_chain_head_allocate(((struct option_chain_head **)
+						  &options->universes
+						  [universe->index]), MDL))
 			return;
 		head = ((struct option_chain_head *)
-			options -> universes [universe -> index]);
+			options->universes[universe->index]);
 	}
 
 	/* Find the tail of the list. */
-	for (tail = &head -> first; *tail; tail = &((*tail) -> cdr)) {
+	for (tail = &head->first; *tail; tail = &((*tail)->cdr)) 
+	{
 		ocloc = (struct option_cache **)&(*tail)->car;
 
-		if (oc->option->code == (*ocloc)->option->code) {
-			if (appendp) {
-				do {
+		if (oc->option->code == (*ocloc)->option->code) 
+		{
+			if (appendp) 
+			{
+				do 
+				{
 					ocloc = &(*ocloc)->next;
 				} while (*ocloc != NULL);
-			} else {
+			}
+			else 
+			{
 				option_cache_dereference(ocloc, MDL);
 			}
 			option_cache_reference(ocloc, oc, MDL);
@@ -3992,10 +4020,10 @@ save_linked_option(struct universe *universe, struct option_state *options,
 		}
 	}
 
-	*tail = cons (0, 0);
-	if (*tail) {
-		option_cache_reference ((struct option_cache **)
-					(&(*tail) -> car), oc, MDL);
+	*tail = cons(0, 0);
+	if (*tail) 
+	{
+		option_cache_reference((struct option_cache **)(&(*tail)->car), oc, MDL);
 	}
 }
 
@@ -4064,25 +4092,31 @@ void delete_linked_option (universe, options, code)
 	}
 }
 
-struct option_cache *lookup_linked_option (universe, options, code)
-	struct universe *universe;
-	struct option_state *options;
-	unsigned code;
+/* 在agent_universe的链表中查找 */
+struct option_cache *lookup_linked_option
+(
+	struct universe *universe,
+	struct option_state *options,
+	unsigned code
+)
 {
 	pair oc;
 	struct option_chain_head *head;
 
-	if (universe -> index >= options -> universe_count)
+	if (universe->index >= options->universe_count)
 		return 0;
+
 	head = ((struct option_chain_head *)
-		options -> universes [universe -> index]);
+		options->universes[universe->index]);
 	if (!head)
 		return 0;
 
-	for (oc = head -> first; oc; oc = oc -> cdr) {
+	for (oc = head->first; oc; oc = oc->cdr) 
+	{
 		if (code ==
-		    ((struct option_cache *)(oc -> car)) -> option -> code) {
-			return (struct option_cache *)(oc -> car);
+		    ((struct option_cache *)(oc->car))->option->code) 
+		{
+			return (struct option_cache *)(oc->car);
 		}
 	}
 
