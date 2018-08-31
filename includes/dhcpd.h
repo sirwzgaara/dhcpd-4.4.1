@@ -1074,7 +1074,7 @@ struct collection {
 	struct class *classes;
 };
 
-/* Used as an argument to parse_clasS_decl() */
+/* Used as an argument to parse_class_decl() */
 #define CLASS_TYPE_VENDOR	0
 #define CLASS_TYPE_USER		1
 #define CLASS_TYPE_CLASS	2

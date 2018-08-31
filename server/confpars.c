@@ -2229,7 +2229,7 @@ void parse_host_declaration
 		log_fatal("can't allocate host decl struct %s: %s",
 			   name, isc_result_totext (status));
 	host->name = name;
-	if (!clone_group(&host->group, group, MDL)) 
+	if (!clone_group(&host->group, group, MDL))
 	{
 		log_fatal ("can't clone group for host %s", name);
 	      boom:
