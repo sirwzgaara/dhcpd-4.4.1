@@ -2388,11 +2388,13 @@ int get_option_int (result, universe, packet, lease, client_state,
 	return (rcode);
 }
 
-void set_option (universe, options, option, op)
-	struct universe *universe;
-	struct option_state *options;
-	struct option_cache *option;
-	enum statement_op op;
+void set_option
+(
+	struct universe *universe,
+	struct option_state *options,
+	struct option_cache *option,
+	enum statement_op op
+)
 {
 	struct option_cache *oc, *noc;
 
@@ -2416,7 +2418,7 @@ void set_option (universe, options, option, op)
 	      case supersede_option_statement:
 	      case send_option_statement:
 		/* Install the option, replacing any existing version. */
-		save_option (universe, options, option);
+		save_option(universe, options, option);
 		break;
 
 	      case append_option_statement:

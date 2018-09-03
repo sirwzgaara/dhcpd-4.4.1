@@ -343,7 +343,7 @@ int execute_statements
 			      r->data.option->option->name);
 		      option_statement:
 #endif
-			set_option (r->data.option->option->universe,
+			set_option(r->data.option->option->universe,
 				    out_options, r->data.option, r->op);
 			break;
 
@@ -572,19 +572,19 @@ int execute_statements
    specific scopes, so we recursively traverse the scope list, executing
    the most outer scope first. */
 
-void execute_statements_in_scope (result, packet,
-				  lease, client_state, in_options, out_options,
-				  scope, group, limiting_group, on_star)
-	struct binding_value **result;
-	struct packet *packet;
-	struct lease *lease;
-	struct client_state *client_state;
-	struct option_state *in_options;
-	struct option_state *out_options;
-	struct binding_scope **scope;
-	struct group *group;
-	struct group *limiting_group;
-	struct on_star *on_star;
+void execute_statements_in_scope
+(
+	struct binding_value **result,
+	struct packet *packet,
+	struct lease *lease,
+	struct client_state *client_state,
+	struct option_state *in_options,
+	struct option_state *out_options,
+	struct binding_scope **scope,
+	struct group *group,
+	struct group *limiting_group,
+	struct on_star *on_star
+)
 {
 	struct group *limit;
 
@@ -615,18 +615,20 @@ void execute_statements_in_scope (result, packet,
 	   evaluate the shared-networks scope, because it's outer than
 	   the limiting scope, which means we've already evaluated it. */
 
-	for (limit = limiting_group; limit; limit = limit -> next) {
+	for (limit = limiting_group; limit; limit = limit->next) 
+	{
 		if (group == limit)
 			return;
 	}
 
-	if (group -> next)
+	/* 后序，从后到前处理 */
+	if (group->next)
 		execute_statements_in_scope (result, packet,
 					     lease, client_state,
 					     in_options, out_options, scope,
 					     group->next, limiting_group,
 					     on_star);
-	execute_statements (result, packet, lease, client_state, in_options,
+	execute_statements(result, packet, lease, client_state, in_options,
 			    out_options, scope, group->statements, on_star);
 }
 

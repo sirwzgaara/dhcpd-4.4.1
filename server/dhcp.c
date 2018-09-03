@@ -2405,6 +2405,7 @@ void ack_lease
 				(&lease->on_star.on_release, MDL);
 	}
 
+	/* 若subnet和pool下有相同的配置，比如min-lease-time，那么pool下的生效 */
 	/* Execute statements in scope starting with the subnet scope. */
 	execute_statements_in_scope (NULL, packet, lease,
 				     NULL, packet->options,
