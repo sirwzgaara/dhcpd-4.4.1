@@ -1012,10 +1012,12 @@ int option_state_dereference (ptr, file, line)
 	return 1;
 }
 
-int executable_statement_allocate (ptr, file, line)
-	struct executable_statement **ptr;
-	const char *file;
-	int line;
+int executable_statement_allocate
+(
+	struct executable_statement **ptr,
+	const char *file,
+	int line
+)
 {
 	struct executable_statement *bp;
 

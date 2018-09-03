@@ -3166,7 +3166,7 @@ void parse_subnet_declaration
 	subnet->net = iaddr;
 
 	/* 下一个token应该是NETMASK */
-	token = next_token (&val, (unsigned *)0, cfile);
+	token = next_token(&val, (unsigned *)0, cfile);
 	if (token != NETMASK) {
 		parse_warn (cfile, "Expecting netmask");
 		skip_to_semi (cfile);

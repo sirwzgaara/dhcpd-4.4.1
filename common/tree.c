@@ -2828,19 +2828,19 @@ int evaluate_option_cache
  * This supports both classic boolean flags on/off as well as the
  * allow/deny/ignore keywords
 */
-int evaluate_boolean_option_cache (ignorep, packet,
-				   lease, client_state, in_options,
-				   cfg_options, scope, oc, file, line)
-	int *ignorep;
-	struct packet *packet;
-	struct lease *lease;
-	struct client_state *client_state;
-	struct option_state *in_options;
-	struct option_state *cfg_options;
-	struct binding_scope **scope;
-	struct option_cache *oc;
-	const char *file;
-	int line;
+int evaluate_boolean_option_cache
+(
+	int *ignorep,
+	struct packet *packet,
+	struct lease *lease,
+	struct client_state *client_state,
+	struct option_state *in_options,
+	struct option_state *cfg_options,
+	struct binding_scope **scope,
+	struct option_cache *oc,
+	const char *file,
+	int line
+)
 {
 	int result = 0;
 	if (ignorep)
@@ -2848,17 +2848,20 @@ int evaluate_boolean_option_cache (ignorep, packet,
 
 	/* Only attempt to evaluate if option_cache is not null. This permits
 	 * us to be called with option_lookup() as an argument. */
-	if (oc && in_options) {
+	if (oc && in_options) 
+	{
 		struct data_string ds;
 
 		memset(&ds, 0, sizeof ds);
 		if (evaluate_option_cache(&ds, packet,
 					  lease, client_state, in_options,
 					  cfg_options, scope, oc, file,
-					  line)) {
+					  line)) 
+		{
 			/* We have a value for the option set result and
 			 * ignore parameter accordingly. */
-			if (ds.len) {
+			if (ds.len) 
+			{
 				if (ds.data[0] == 1)
 					result = 1;
 				else if ((ds.data[0] == 2) && (ignorep != NULL))

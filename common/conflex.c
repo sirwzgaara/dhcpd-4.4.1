@@ -867,11 +867,12 @@ static enum dhcp_token read_num_or_name (c, cfile)
 {
 	int i = 0;
 	enum dhcp_token rv = NUMBER_OR_NAME;
-	cfile -> tokbuf [i++] = c;
-	for (; i < sizeof cfile -> tokbuf; i++) {
-		c = get_char (cfile);
-		if (!isascii (c) ||
-		    (c != '-' && c != '_' && !isalnum (c))) {
+	cfile -> tokbuf[i++] = c;
+	for (; i < sizeof(cfile->tokbuf); i++) 
+	{
+		c = get_char(cfile);
+		if (!isascii(c) || (c != '-' && c != '_' && !isalnum(c))) 
+		{
 		    	unget_char(cfile, c);
 			break;
 		}
@@ -879,13 +880,16 @@ static enum dhcp_token read_num_or_name (c, cfile)
 			rv = NAME;
 		cfile -> tokbuf [i] = c;
 	}
-	if (i == sizeof cfile -> tokbuf) {
-		parse_warn (cfile, "token larger than internal buffer");
+
+	if (i == sizeof(cfile->tokbuf)) 
+	{
+		parse_warn(cfile, "token larger than internal buffer");
 		--i;
 	}
-	cfile -> tokbuf [i] = 0;
-	cfile -> tlen = i;
-	cfile -> tval = cfile -> tokbuf;
+
+	cfile->tokbuf[i] = 0;
+	cfile->tlen = i;
+	cfile->tval = cfile->tokbuf;
 	return intern(cfile->tval, rv);
 }
 

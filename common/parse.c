@@ -2163,8 +2163,9 @@ int parse_executable_statement
 	isc_result_t status;
 	char *s;
 
-	token = peek_token (&val, (unsigned *)0, cfile);
-	switch (token) {
+	token = peek_token(&val, (unsigned *)0, cfile);
+	switch (token) 
+	{
 	      case DB_TIME_FORMAT:
 		skip_token(&val, NULL, cfile);
 		token = next_token(&val, NULL, cfile);
@@ -2769,12 +2770,15 @@ int parse_executable_statement
 		return 1;
 
 	      default:
-		if (config_universe && is_identifier (token)) {
+		/* 比如，ping-check = true可以走进来 */
+		if (config_universe && is_identifier(token)) 
+		{
 			option = (struct option *)0;
 			option_name_hash_lookup(&option,
 						config_universe->name_hash,
 						val, 0, MDL);
-			if (option) {
+			if (option) 
+			{
 				skip_token(&val, (unsigned *)0, cfile);
 				status = parse_option_statement
 						(result, cfile, 1, option,
@@ -2784,31 +2788,36 @@ int parse_executable_statement
 			}
 		}
 
-		if (token == NUMBER_OR_NAME || token == NAME) {
+		if (token == NUMBER_OR_NAME || token == NAME) 
+		{
 			/* This is rather ugly.  Since function calls are
 			   data expressions, fake up an eval statement. */
-			if (!executable_statement_allocate (result, MDL))
-				log_fatal ("no memory for eval statement.");
-			(*result) -> op = eval_statement;
+			if (!executable_statement_allocate(result, MDL))
+				log_fatal("no memory for eval statement.");
+			(*result)->op = eval_statement;
 
-			if (!parse_expression (&(*result) -> data.eval,
+			if (!parse_expression(&(*result)->data.eval,
 					       cfile, lose, context_data,
 					       (struct expression **)0,
-					       expr_none)) {
+					       expr_none)) 
+			{
 				if (!*lose)
-					parse_warn (cfile, "expecting "
-						    "function call.");
+					parse_warn(cfile, "expecting function call.");
 				else
 					*lose = 1;
-				skip_to_semi (cfile);
-				executable_statement_dereference (result, MDL);
+
+				skip_to_semi(cfile);
+				executable_statement_dereference(result, MDL);
 				return 0;
 			}
-			if (!parse_semi (cfile)) {
+
+			if (!parse_semi(cfile)) 
+			{
 				*lose = 1;
 				executable_statement_dereference (result, MDL);
 				return 0;
 			}
+
 			break;
 		}
 
@@ -5066,13 +5075,15 @@ int parse_option_statement
 	return 1;
 }
 
-int parse_option_token (rv, cfile, fmt, expr, uniform, lookups)
-	struct expression **rv;
-	struct parse *cfile;
-	const char **fmt;
-	struct expression *expr;
-	int uniform;
-	int lookups;
+int parse_option_token
+(
+	struct expression **rv,
+	struct parse *cfile,
+	const char **fmt,
+	struct expression *expr,
+	int uniform,
+	int lookups
+)
 {
 	const char *val;
 	enum dhcp_token token;
@@ -5311,7 +5322,7 @@ int parse_option_token (rv, cfile, fmt, expr, uniform, lookups)
 				parse_warn (cfile, "expecting boolean.");
 			goto bad_flag;
 		}
-		if (!make_const_data (&t, buf, 1, 0, 1, MDL))
+		if (!make_const_data(&t, buf, 1, 0, 1, MDL))
 			return 0;
 		break;
 
@@ -5337,10 +5348,13 @@ int parse_option_token (rv, cfile, fmt, expr, uniform, lookups)
 		skip_to_semi (cfile);
 		return 0;
 	}
-	if (expr) {
-		if (!make_concat (rv, expr, t))
+
+	if (expr)
+	{
+		if (!make_concat(rv, expr, t))
 			return 0;
-	} else
+	} 
+	else
 		expression_reference (rv, t, MDL);
 	expression_dereference (&t, MDL);
 	return 1;
