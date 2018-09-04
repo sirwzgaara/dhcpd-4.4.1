@@ -541,8 +541,10 @@ int parse_statement
 					  "the scope you declared them in.");
 			}
 
-			parse_host_declaration (cfile, group);
-		} else {
+			parse_host_declaration(cfile, group);
+		}
+		else 
+		{
 			parse_warn (cfile,
 				    "host declarations not allowed here.");
 			skip_to_semi (cfile);
@@ -565,14 +567,15 @@ int parse_statement
 		if (type == SHARED_NET_DECL ||
 		    type == HOST_DECL ||
 		    type == SUBNET_DECL ||
-		    type == CLASS_DECL) {
+		    type == CLASS_DECL) 
+		{
 			parse_warn (cfile, "shared-network parameters not %s.",
 				    "allowed here");
 			skip_to_semi (cfile);
 			break;
 		}
 
-		parse_shared_net_declaration (cfile, group);
+		parse_shared_net_declaration(cfile, group);
 		return 1;
 
 	      case SUBNET:
@@ -715,20 +718,21 @@ int parse_statement
 
 	      case HARDWARE:
 		skip_token(&val, (unsigned *)0, cfile);
-		memset (&hardware, 0, sizeof hardware);
+		memset(&hardware, 0, sizeof(hardware));
 		if (host_decl && memcmp(&hardware, &(host_decl->interface),
-					sizeof(hardware)) != 0) {
+					sizeof(hardware)) != 0) 
+		{
 			parse_warn(cfile, "Host %s hardware address already "
 					  "configured.", host_decl->name);
 			break;
 		}
 
 		/* 解析之后，hardware包含硬件长度和地址 */
-		parse_hardware_param (cfile, &hardware);
+		parse_hardware_param(cfile, &hardware);
 		if (host_decl)
-			host_decl -> interface = hardware;
+			host_decl->interface = hardware;
 		else
-			parse_warn (cfile, "hardware address parameter %s",
+			parse_warn(cfile, "hardware address parameter %s",
 				    "not allowed here.");
 		break;
 
@@ -2217,7 +2221,8 @@ void parse_host_declaration
 
 	/* 解析hostname，是一个字符串 */
 	name = parse_host_name(cfile);
-	if (!name) {
+	if (!name) 
+	{
 		parse_warn (cfile, "expecting a name for host declaration.");
 		skip_to_semi (cfile);
 		return;
@@ -2228,6 +2233,7 @@ void parse_host_declaration
 	if (status != ISC_R_SUCCESS)
 		log_fatal("can't allocate host decl struct %s: %s",
 			   name, isc_result_totext (status));
+
 	host->name = name;
 	if (!clone_group(&host->group, group, MDL))
 	{
@@ -2242,18 +2248,21 @@ void parse_host_declaration
 
 	do {
 		token = peek_token (&val, (unsigned *)0, cfile);
-		if (token == RBRACE) {
+		if (token == RBRACE) 
+		{
 			skip_token(&val, (unsigned *)0, cfile);
 			break;
 		}
-		if (token == END_OF_FILE) {
+		if (token == END_OF_FILE) 
+		{
 			skip_token(&val, (unsigned *)0, cfile);
 			parse_warn (cfile, "unexpected end of file");
 			break;
 		}
 		/* If the host declaration was created by the server,
 		   remember to save it. */
-		if (token == DYNAMIC) {
+		if (token == DYNAMIC) 
+		{
 			dynamicp = 1;
 			skip_token(&val, (unsigned *)0, cfile);
 			if (!parse_semi (cfile))
@@ -2262,7 +2271,8 @@ void parse_host_declaration
 		}
 		/* If the host declaration was created by the server,
 		   remember to save it. */
-		if (token == TOKEN_DELETED) {
+		if (token == TOKEN_DELETED) 
+		{
 			deleted = 1;
 			skip_token(&val, (unsigned *)0, cfile);
 			if (!parse_semi (cfile))
@@ -2270,7 +2280,8 @@ void parse_host_declaration
 			continue;
 		}
 
-		if (token == GROUP) {
+		if (token == GROUP) 
+		{
 			struct group_object *go;
 			skip_token(&val, (unsigned *)0, cfile);
 			token = next_token (&val, (unsigned *)0, cfile);
@@ -2298,7 +2309,8 @@ void parse_host_declaration
 			continue;
 		}
 
-		if (token == UID) {
+		if (token == UID) 
+		{
 			const char *s;
 			unsigned char *t = 0;
 			unsigned len;
@@ -2349,7 +2361,8 @@ void parse_host_declaration
 			continue;
 		}
 
-		if (token == HOST_IDENTIFIER) {
+		if (token == HOST_IDENTIFIER) 
+		{
 			if (host->host_id_option != NULL) {
 				parse_warn(cfile,
 					   "only one host-identifier allowed "
@@ -2933,27 +2946,34 @@ void parse_shared_net_declaration
 	if (status != ISC_R_SUCCESS)
 		log_fatal ("Can't allocate shared subnet: %s",
 			   isc_result_totext (status));
-	if (clone_group (&share->group, group, MDL) == 0) {
-		log_fatal ("Can't clone group for shared net");
+
+	if (clone_group(&share->group, group, MDL) == 0) 
+	{
+		log_fatal("Can't clone group for shared net");
 	}
 	shared_network_reference(&share->group->shared_network, share, MDL);
 
 	/* Get the name of the shared network... */
-	token = peek_token (&val, (unsigned *)0, cfile);
-	if (token == STRING) {
+	token = peek_token(&val, (unsigned *)0, cfile);
+	if (token == STRING) 
+	{
 		skip_token(&val, (unsigned *)0, cfile);
 
-		if (val [0] == 0) {
+		if (val[0] == 0) 
+		{
 			parse_warn (cfile, "zero-length shared network name");
 			val = "<no-name-given>";
 		}
-		name = dmalloc (strlen (val) + 1, MDL);
+		name = dmalloc(strlen (val) + 1, MDL);
 		if (!name)
-			log_fatal ("no memory for shared network name");
-		strcpy (name, val);
-	} else {
-		name = parse_host_name (cfile);
-		if (!name) {
+			log_fatal("no memory for shared network name");
+		strcpy(name, val);
+	} 
+	else 
+	{
+		name = parse_host_name(cfile);
+		if (!name) 
+		{
 			parse_warn (cfile,
 				     "expecting a name for shared-network");
 			skip_to_semi (cfile);
@@ -2970,21 +2990,26 @@ void parse_shared_net_declaration
 	}
 
 	do {
-		token = peek_token (&val, (unsigned *)0, cfile);
-		if (token == RBRACE) {
+		token = peek_token(&val, (unsigned *)0, cfile);
+		if (token == RBRACE) 
+		{
 			skip_token(&val, (unsigned *)0, cfile);
-			if (!share -> subnets)
-				parse_warn (cfile,
+			if (!share->subnets)
+				parse_warn(cfile,
 					    "empty shared-network decl");
 			else
-				enter_shared_network (share);
-			shared_network_dereference (&share, MDL);
+				enter_shared_network(share);
+			shared_network_dereference(&share, MDL);
 			return;
-		} else if (token == END_OF_FILE) {
+		}
+		else if (token == END_OF_FILE) 
+		{
 			skip_token(&val, (unsigned *)0, cfile);
 			parse_warn (cfile, "unexpected end of file");
 			break;
-		} else if (token == INTERFACE) {
+		} 
+		else if (token == INTERFACE) 
+		{
 			skip_token(&val, (unsigned *)0, cfile);
 			token = next_token (&val, (unsigned *)0, cfile);
 			new_shared_network_interface (cfile, share, val);
@@ -2993,7 +3018,7 @@ void parse_shared_net_declaration
 			continue;
 		}
 
-		declaration = parse_statement (cfile, share -> group,
+		declaration = parse_statement (cfile, share->group,
 					       SHARED_NET_DECL,
 					       (struct host_decl *)0,
 					       declaration);

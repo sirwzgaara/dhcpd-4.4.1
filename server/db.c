@@ -1054,7 +1054,8 @@ int commit_leases()
 	/* If we haven't rewritten the lease database in over an
 	   hour, rewrite it now.  (The length of time should probably
 	   be configurable. */
-	if (count && cur_time - write_time > LEASE_REWRITE_PERIOD) {
+	if (count && cur_time - write_time > LEASE_REWRITE_PERIOD) 
+	{
 		count = 0;
 		write_time = cur_time;
 		new_lease_file(0);
