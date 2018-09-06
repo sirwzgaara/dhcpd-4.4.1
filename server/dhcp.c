@@ -1212,9 +1212,11 @@ u_int16_t dhcp_check_relayport(packet)
 }
 #endif
 
-void dhcpinform (packet, ms_nulltp)
-	struct packet *packet;
-	int ms_nulltp;
+void dhcpinform
+(
+	struct packet *packet;,
+	int ms_nulltp
+)
 {
 	char msgbuf[1024], *addr_type;
 	struct data_string d1, prl, fixed_addr;
