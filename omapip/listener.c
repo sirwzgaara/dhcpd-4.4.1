@@ -288,6 +288,7 @@ isc_result_t omapi_accept(omapi_object_t *h)
 		return status;
 	}
 
+	/* 之前没建立连接，只有读接口，现在也有写接口了 */
 	status = omapi_register_io_object((omapi_object_t *)obj,
 					   omapi_connection_readfd,
 					   omapi_connection_writefd,

@@ -275,9 +275,12 @@ static isc_result_t omapi_connection_reader_trace (omapi_object_t *h,
 
 /* Put some bytes into the output buffer for a connection. */
 
-isc_result_t omapi_connection_copyin (omapi_object_t *h,
-				      const unsigned char *bufp,
-				      unsigned len)
+isc_result_t omapi_connection_copyin 
+(
+	omapi_object_t *h,
+	const unsigned char *bufp,
+	unsigned len
+)
 {
 	omapi_buffer_t *buffer;
 	isc_result_t status;
@@ -293,57 +296,62 @@ isc_result_t omapi_connection_copyin (omapi_object_t *h,
 
 	/* If the connection is closed, return an error if the caller
 	   tries to copy in. */
-	if (c -> state == omapi_connection_disconnecting ||
-	    c -> state == omapi_connection_closed)
+	if (c->state == omapi_connection_disconnecting ||
+	    c->state == omapi_connection_closed)
 		return ISC_R_NOTCONNECTED;
 
-	if (c -> outbufs) {
-		for (buffer = c -> outbufs;
-		     buffer -> next; buffer = buffer -> next)
+	if (c->outbufs) 
+	{
+		for (buffer = c->outbufs;
+		     buffer->next; buffer = buffer->next)
 			;
-	} else {
-		status = omapi_buffer_new (&c -> outbufs, MDL);
+	} 
+	else 
+	{
+		status = omapi_buffer_new(&c->outbufs, MDL);
 		if (status != ISC_R_SUCCESS)
 			goto leave;
-		buffer = c -> outbufs;
+		buffer = c->outbufs;
 	}
 
-	while (bytes_copied < len) {
+	while (bytes_copied < len) 
+	{
 		/* If there is no space available in this buffer,
                    allocate a new one. */
-		if (!BUFFER_BYTES_FREE (buffer)) {
-			status = (omapi_buffer_new (&buffer -> next, MDL));
+		if (!BUFFER_BYTES_FREE (buffer)) 
+		{
+			status = (omapi_buffer_new(&buffer->next, MDL));
 			if (status != ISC_R_SUCCESS)
 				goto leave;
-			buffer = buffer -> next;
+			buffer = buffer->next;
 		}
 
-		if (buffer -> tail > buffer -> head)
-			copy_len = sizeof (buffer -> buf) - buffer -> tail;
+		if (buffer->tail > buffer->head)
+			copy_len = sizeof(buffer->buf) - buffer->tail;
 		else
-			copy_len = buffer -> head - buffer -> tail;
+			copy_len = buffer->head - buffer->tail;
 
 		if (copy_len > (len - bytes_copied))
 			copy_len = len - bytes_copied;
 
-		if (c -> out_key) {
-			if (!c -> out_context)
+		if (c->out_key) 
+		{
+			if (!c->out_context)
 				sig_flags |= SIG_MODE_INIT;
 			status = omapi_connection_sign_data
-				(sig_flags, c -> out_key, &c -> out_context,
+				(sig_flags, c->out_key, &c->out_context,
 				 &bufp [bytes_copied], copy_len,
 				 (omapi_typed_data_t **)0);
 			if (status != ISC_R_SUCCESS)
 				goto leave;
 		}
 
-		memcpy (&buffer -> buf [buffer -> tail],
-			&bufp [bytes_copied], copy_len);
-		buffer -> tail += copy_len;
-		c -> out_bytes += copy_len;
+		memcpy(&buffer->buf[buffer->tail], &bufp[bytes_copied], copy_len);
+		buffer->tail += copy_len;
+		c->out_bytes += copy_len;
 		bytes_copied += copy_len;
-		if (buffer -> tail == sizeof buffer -> buf)
-			buffer -> tail = 0;
+		if (buffer->tail == sizeof(buffer->buf))
+			buffer->tail = 0;
 	}
 
 	status = ISC_R_SUCCESS;
@@ -354,9 +362,11 @@ isc_result_t omapi_connection_copyin (omapi_object_t *h,
 	 * inform the socket code that we would like to know when we
 	 * can send more bytes.
 	 */
-	if (c->out_bytes != 0) {
+	if (c->out_bytes != 0) 
+	{
 		if ((c->outer != NULL) &&
-		    (c->outer->type == omapi_type_io_object)) {
+		    (c->outer->type == omapi_type_io_object)) 
+		{
 			omapi_io_object_t *io = (omapi_io_object_t *)c->outer;
 			isc_socket_fdwatchpoke(io->fd,
 					       ISC_SOCKFDWATCH_WRITE);

@@ -395,12 +395,13 @@ int main
 	/* When not forbidden prepare to become a daemon */
 	if (daemon) 
 	{
+		/* 创建无名管道 */
 		if (pipe(dfd) == -1)
 		{
 			log_fatal("Can't get pipe: %m");
 		}
 		
-		if ((pid = fork ()) < 0)
+		if ((pid = fork()) < 0)
 		{
 			log_fatal("Can't fork daemon: %m");
 		}
@@ -424,7 +425,7 @@ int main
 			} while (n == -1 && errno == EINTR);
 			_exit(1);
 		}
-		/* Child */
+		/* 子进程关闭读通道 */
 		(void)close(dfd[0]);
 	}
 #endif

@@ -900,10 +900,12 @@ int dns_host_entry_dereference (ptr, file, line)
 	return 1;
 }
 
-int option_state_allocate (ptr, file, line)
-	struct option_state **ptr;
-	const char *file;
-	int line;
+int option_state_allocate
+(
+	struct option_state **ptr,
+	const char *file,
+	int line
+)
 {
 	unsigned size;
 
@@ -927,7 +929,8 @@ int option_state_allocate (ptr, file, line)
 	/* 一共universe_count个void *的指针，用来挂接全局universe，比如dhcp_universe */
 	size = sizeof(**ptr) + (universe_count - 1) * sizeof(void *);
 	*ptr = dmalloc(size, file, line);
-	if (*ptr) {
+	if (*ptr) 
+	{
 		memset (*ptr, 0, size);
 		(*ptr)->universe_count = universe_count;
 		(*ptr)->refcnt = 1;

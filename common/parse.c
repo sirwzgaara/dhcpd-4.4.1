@@ -1568,9 +1568,11 @@ void parse_option_space_decl
 			STRING |
 			ENCAPSULATE identifier */
 
-int parse_option_code_definition (cfile, option)
-	struct parse *cfile;
-	struct option *option;
+int parse_option_code_definition
+(
+	struct parse *cfile,
+	struct option *option
+)
 {
 	const char *val;
 	enum dhcp_token token;
@@ -1588,15 +1590,17 @@ int parse_option_code_definition (cfile, option)
 	
 	/* Parse the option code. */
 	token = next_token (&val, (unsigned *)0, cfile);
-	if (token != NUMBER) {
+	if (token != NUMBER) 
+	{
 		parse_warn (cfile, "expecting option code number.");
 		skip_to_semi (cfile);
 		return 0;
 	}
-	option -> code = atoi (val);
+	option->code = atoi (val);
 
-	token = next_token (&val, (unsigned *)0, cfile);
-	if (token != EQUAL) {
+	token = next_token(&val, (unsigned *)0, cfile);
+	if (token != EQUAL) 
+	{
 		parse_warn (cfile, "expecting \"=\"");
 		skip_to_semi (cfile);
 		return 0;
@@ -1604,7 +1608,9 @@ int parse_option_code_definition (cfile, option)
 
 	/* See if this is an array. */
 	token = next_token (&val, (unsigned *)0, cfile);
-	if (token == ARRAY) {
+	/* array of ip-address; */
+	if (token == ARRAY) 
+	{
 		token = next_token (&val, (unsigned *)0, cfile);
 		if (token != OF) {
 			parse_warn (cfile, "expecting \"of\".");
@@ -1827,6 +1833,7 @@ int parse_option_code_definition (cfile, option)
 			return 0;
 		}
 	}
+
 	if (!parse_semi (cfile)) {
 		parse_warn (cfile, "semicolon expected.");
 		skip_to_semi (cfile);
@@ -1834,11 +1841,13 @@ int parse_option_code_definition (cfile, option)
 			skip_to_semi (cfile);
 		return 0;
 	}
+
 	if (has_encapsulation && arrayp) {
 		parse_warn (cfile,
 			    "Arrays of encapsulations don't make sense.");
 		return 0;
 	}
+
 	s = dmalloc(tokix + (arrayp ? 1 : 0) + 1, MDL);
 	if (s == NULL) {
 		log_fatal("no memory for option format.");
@@ -1849,7 +1858,7 @@ int parse_option_code_definition (cfile, option)
 	}
 	s[tokix] = '\0';
 
-	option -> format = s;
+	option->format = s;
 
 	oldopt = NULL;
 	option_code_hash_lookup(&oldopt, option->universe->code_hash,
@@ -3578,24 +3587,28 @@ int parse_boolean (cfile)
  *		       colon_separated_hex_list
  */
 
-int parse_data_expression (expr, cfile, lose)
-	struct expression **expr;
-	struct parse *cfile;
-	int *lose;
+int parse_data_expression
+(
+	struct expression **expr,
+	struct parse *cfile,
+	int *lose
+)
 {
 	/* Parse an expression... */
-	if (!parse_expression (expr, cfile, lose, context_data,
+	if (!parse_expression(expr, cfile, lose, context_data,
 			       (struct expression **)0, expr_none))
 		return 0;
 
 	if (!is_data_expression (*expr) &&
-	    (*expr) -> op != expr_variable_reference &&
-	    (*expr) -> op != expr_funcall) {
-		expression_dereference (expr, MDL);
-		parse_warn (cfile, "Expecting a data expression.");
+	    (*expr)->op != expr_variable_reference &&
+	    (*expr)->op != expr_funcall) 
+	{
+		expression_dereference(expr, MDL);
+		parse_warn(cfile, "Expecting a data expression.");
 		*lose = 1;
 		return 0;
 	}
+
 	return 1;
 }
 

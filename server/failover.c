@@ -113,12 +113,10 @@ void dhcp_failover_startup()
 		dhcp_failover_state_transition(state, "startup");
 		/* In case the peer is already running, immediately try
 		   to establish a connection with it. */
+		/* link对象用来主动和对端建立连接 */
 		status = dhcp_failover_link_initiate((omapi_object_t *)state);
 		if (status != ISC_R_SUCCESS && status != DHCP_R_INCOMPLETE) 
 		{
-#if defined (DEBUG_FAILOVER_TIMING)
-			log_info ("add_timeout +90 dhcp_failover_reconnect");
-#endif
 			tv.tv_sec = cur_time + 90;
 			tv.tv_usec = 0;
 			add_timeout(&tv,
@@ -131,13 +129,10 @@ void dhcp_failover_startup()
 				   isc_result_totext (status));
 		}
 
+		/* listen对象用来监听对端发来的连接 */
 		status =(dhcp_failover_listen((omapi_object_t *)state));
 		if (status != ISC_R_SUCCESS) 
 		{
-#if defined (DEBUG_FAILOVER_TIMING)
-			log_info ("add_timeout +90 %s",
-				  "dhcp_failover_listener_restart");
-#endif
 			tv.tv_sec = cur_time + 90;
 			tv.tv_usec = 0;
 			add_timeout (&tv,

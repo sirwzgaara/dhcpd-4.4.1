@@ -1212,6 +1212,7 @@ u_int16_t dhcp_check_relayport(packet)
 }
 #endif
 
+/* 已经获取IP地址的客户端来请求其他option */
 void dhcpinform
 (
 	struct packet *packet;,
@@ -1245,36 +1246,46 @@ void dhcpinform
 	/* The client should set ciaddr to its IP address, but apparently
 	   it's common for clients not to do this, so we'll use their IP
 	   source address if they didn't set ciaddr. */
-	if (!packet->raw->ciaddr.s_addr) {
+	if (!packet->raw->ciaddr.s_addr) 
+	{
 		zeroed_ciaddr = ISC_TRUE;
 		/* With DHCPv4-over-DHCPv6 it can be an IPv6 address
 		   so we check its length. */
-		if (packet->client_addr.len == 4) {
+		if (packet->client_addr.len == 4) 
+		{
 			cip.len = 4;
 			memcpy(cip.iabuf, &packet->client_addr.iabuf, 4);
 			addr_type = "source";
-		} else {
+		} 
+		else 
+		{
 			cip.len = 0;
 			memset(cip.iabuf, 0, 4);
 			addr_type = "v4o6";
 		}
-	} else {
+	}
+	else 
+	{
 		zeroed_ciaddr = ISC_FALSE;
 		cip.len = 4;
 		memcpy(cip.iabuf, &packet->raw->ciaddr, 4);
 		addr_type = "client";
 	}
+
 	sip.len = 4;
 	memcpy(sip.iabuf, cip.iabuf, 4);
 
-	if (packet->raw->giaddr.s_addr) {
+	if (packet->raw->giaddr.s_addr) 
+	{
 		gip.len = 4;
 		memcpy(gip.iabuf, &packet->raw->giaddr, 4);
-		if (zeroed_ciaddr == ISC_TRUE) {
+		if (zeroed_ciaddr == ISC_TRUE) 
+		{
 			addr_type = "relay";
 			memcpy(sip.iabuf, gip.iabuf, 4);
 		}
-	} else
+	} 
+	else
 		gip.len = 0;
 
 	/* %Audit% This is log output. %2004.06.17,Safe%
@@ -1295,7 +1306,8 @@ void dhcpinform
 		 packet->interface->name);
 
 	/* If the IP source address is zero, don't respond. */
-	if (!memcmp(cip.iabuf, "\0\0\0", 4)) {
+	if (!memcmp(cip.iabuf, "\0\0\0", 4)) 
+	{
 		log_info("%s: ignored (null source address).", msgbuf);
 		return;
 	}
@@ -1318,10 +1330,12 @@ void dhcpinform
 	memset(&d1, 0, sizeof d1);
 	if (oc && evaluate_option_cache(&d1, packet, NULL, NULL,
 					packet->options, NULL,
-					&global_scope, oc, MDL)) {
+					&global_scope, oc, MDL)) 
+	{
 		struct option_cache *noc = NULL;
 
-		if (d1.len != 4) {
+		if (d1.len != 4) 
+		{
 			log_info("%s: ignored (invalid subnet selection option).", msgbuf);
 			option_state_dereference(&options, MDL);
 			return;
@@ -1331,7 +1345,8 @@ void dhcpinform
 		data_string_forget(&d1, MDL);
 
 		/* Make a copy of the data. */
-		if (option_cache_allocate(&noc, MDL)) {
+		if (option_cache_allocate(&noc, MDL))
+		{
 			if (oc->data.len)
 				data_string_copy(&noc->data, &oc->data, MDL);
 			if (oc->expression)
@@ -1352,7 +1367,8 @@ void dhcpinform
 
 	find_subnet(&subnet, sip, MDL);
 
-	if (subnet == NULL) {
+	if (subnet == NULL) 
+	{
 		log_info("%s: unknown subnet for %s address %s",
 			 msgbuf, addr_type, piaddr(sip));
 		option_state_dereference(&options, MDL);
@@ -1363,7 +1379,8 @@ void dhcpinform
 	   It would be nice if a per-host value could override this, but
 	   there's overhead involved in checking this, so let's see how people
 	   react first. */
-	if (!subnet->group->authoritative) {
+	if (!subnet->group->authoritative) 
+	{
 		static int eso = 0;
 		log_info("%s: not authoritative for subnet %s",
 			  msgbuf, piaddr (subnet -> net));
@@ -1398,7 +1415,8 @@ void dhcpinform
 				    NULL, NULL);
 
 	/* If we have ciaddr, find its lease so we can find its pool. */
-	if (zeroed_ciaddr == ISC_FALSE) {
+	if (zeroed_ciaddr == ISC_FALSE) 
+	{
 		struct lease* cip_lease = NULL;
 
 		find_lease_by_ip_addr (&cip_lease, cip, MDL);

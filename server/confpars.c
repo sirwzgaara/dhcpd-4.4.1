@@ -900,6 +900,8 @@ int parse_statement
 		if (status == ISC_R_SUCCESS) 
 		{
 			token = peek_token(&val, (unsigned *)0, cfile);
+			/* 一个示例option option138 code 138 = array of ip-address;配置有全局的和pool下的，
+			第一次解析到全局配置，这里可以走进去，后续解析pool的时候，这里走不进去 */
 			if (token == CODE) 
 			{
 				if (type != ROOT_GROUP) 
@@ -917,7 +919,8 @@ int parse_statement
 				 * If the option was known, remove it from the
 				 * code and name hashes before redefining it.
 				 */
-				if (known) {
+				if (known) 
+				{
 					option_name_hash_delete(
 						option->universe->name_hash,
 							option->name, 0, MDL);
