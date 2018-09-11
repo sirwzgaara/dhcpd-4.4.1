@@ -171,12 +171,13 @@ isc_result_t read_conf_file
 
 	cfile = (struct parse *)0;
 #if defined (TRACING)
-	flen = lseek (file, (off_t)0, SEEK_END);
+	/* flen是到文件结尾处的文件大小字节数，这里就是conf文件的大小 */
+	flen = lseek(file, (off_t)0, SEEK_END);
 	if (flen < 0) {
 	      boom:
 		log_fatal ("Can't lseek on %s: %m", filename);
 	}
-	if (lseek (file, (off_t)0, SEEK_SET) < 0)
+	if (lseek(file, (off_t)0, SEEK_SET) < 0)
 		goto boom;
 	/* Can't handle files greater than 2^31-1. */
 	if (flen > 0x7FFFFFFFUL)
@@ -185,8 +186,8 @@ isc_result_t read_conf_file
 
 	/* Allocate a buffer that will be what's written to the tracefile,
 	   and also will be what we parse from. */
-	tflen = strlen (filename);
-	dbuf = dmalloc (ulen + tflen + 1, MDL);
+	tflen = strlen(filename);
+	dbuf = dmalloc(ulen + tflen + 1, MDL);
 	if (!dbuf)
 		log_fatal ("No memory for %s (%d bytes)",
 			   filename, ulen);
@@ -196,7 +197,9 @@ isc_result_t read_conf_file
 
 	/* Load the file in after the NUL. */
 	fbuf = dbuf + tflen + 1;
-	result = read (file, fbuf, ulen);
+
+	/* read函数将文件读入内存指定指针位置 */
+	result = read(file, fbuf, ulen);
 	if (result < 0)
 		log_fatal ("Can't read in %s: %m", filename);
 	if (result != ulen)

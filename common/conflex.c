@@ -84,6 +84,7 @@ isc_result_t new_parse
 	tmp->file 		 = file;					//文件标识符
 	tmp->eol_token   = eolp;
 
+	/* 若外界提供inbuf，说明已经将文件映射到内存了，这个时候直接用内存 */
 	if (inbuf != NULL) 
 	{
 		tmp->inbuf = inbuf;
