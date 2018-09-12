@@ -286,12 +286,16 @@ isc_result_t omapi_handle_td_lookup (omapi_object_t **obj,
 
 	if (handle->type == omapi_datatype_int)
 		h = handle->u.integer;
+
 	else if (handle->type == omapi_datatype_data &&
-		 handle->u.buffer.len == sizeof h) {
+		 handle->u.buffer.len == sizeof(h)) 
+	{
 		memcpy(&h, handle->u.buffer.value, sizeof h);
 		h = ntohl(h);
-	} else
+	} 
+	else
 		return(DHCP_R_INVALIDARG);
+
 	return(omapi_handle_lookup(obj, h));
 }
 
