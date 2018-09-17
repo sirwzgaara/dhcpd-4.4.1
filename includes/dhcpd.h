@@ -286,13 +286,13 @@ typedef struct {
 /* A parsing context. */
 
 struct parse {
-	int lexline;
-	int lexchar;
-	char *token_line;
-	char *prev_line;
-	char *cur_line;
-	const char *tlname;
-	int eol_token;
+	int lexline;			//正在解析的这一行的行号
+	int lexchar;			//当前行位置，最后是加上结尾换行符一共有多少字符
+	char *token_line;		//当前行的上一行的内容
+	char *prev_line;		//同上
+	char *cur_line;			//正在解析的这一行的内容
+	const char *tlname;		//conf文件的绝对路径名
+	int eol_token;			//这个一般都是0
 
 	/*
 	 * In order to give nice output when we have a parsing error
@@ -311,22 +311,23 @@ struct parse {
 	 * output. So, we set a flag, the "ugflag", which the
 	 * get_char() function uses to check for this condition.
 	 */
-	char line1 [81];
-	char line2 [81];
+	char line1 [81];		//解析到当前token时附近奇数行内容
+	char line2 [81];		//附近偶数行内容
 	int lpos;				//在当前行的哪个位置
-	int line;
+	int line;				//当前行号
 	int tlpos;
-	int tline;
+	int tline;				//当前行号
 	enum dhcp_token token;
 	int ugflag;				//标记一个字符是否是被退回的
-	char *tval;
-	int tlen;
-	char tokbuf [1500];
+	char *tval;				//token值
+	int tlen;				//token的长度
+	char tokbuf [1500];		//存着当前的token
 
 	int warnings_occurred;
 	int file;
-	char *inbuf;
-	size_t bufix, buflen;
+	char *inbuf;			//这是整个文件的内容
+	size_t bufix; 			//当前解析在整个文件中的位置
+	size_ buflen;			//整个文件长度
 	size_t bufsiz;
 
 	struct parse *saved_state;

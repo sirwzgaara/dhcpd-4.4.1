@@ -298,7 +298,7 @@ static int get_char
 static void
 unget_char(struct parse *cfile, int c) {
 	if (c != EOF) {
-		cfile->bufix--;
+		cfile->bufi,x--;
 		cfile->ugflag = 1;	/* do not put characters into
 					   our error buffer on the next
 					   call to get_char() */
@@ -723,7 +723,9 @@ static enum dhcp_token read_string
 					bs = 0;
 				} else
 					goto again;
-			} else {
+			} 
+			else 
+			{
 				if (c >= '0' && c <= '7') {
 					value = value * 8 + (c - '0');
 				} else {

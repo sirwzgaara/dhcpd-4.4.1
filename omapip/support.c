@@ -534,7 +534,7 @@ isc_result_t omapi_get_value_str
 	else
 		status = ISC_R_NOTFOUND;
 	
-	omapi_data_string_dereference (&nds, MDL);
+	omapi_data_string_dereference(&nds, MDL);
 	
 	return status;
 }

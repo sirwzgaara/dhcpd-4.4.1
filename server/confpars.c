@@ -212,6 +212,7 @@ isc_result_t read_conf_file
 		trace_write_packet (ttype, ulen + tflen + 1, dbuf, MDL);
 	status = new_parse(&cfile, -1, fbuf, ulen, filename, 0); /* XXX */
 #else
+	/* ¹¹½¨cfile */
 	status = new_parse(&cfile, file, NULL, 0, filename, 0);
 #endif
 	if (status != ISC_R_SUCCESS || cfile == NULL)

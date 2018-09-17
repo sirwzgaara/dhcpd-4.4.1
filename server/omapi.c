@@ -745,7 +745,18 @@ isc_result_t dhcp_lease_stuff_values (omapi_object_t *c,
 	return ISC_R_SUCCESS;
 }
 
-/* omapi发起关联，dhcpd查找lease的处理函数 */
+/*********************************************************************
+Func Name :   dhcp_lease_lookup
+Date Created: 2018/09/17
+Author:  	  wangzhe
+Description:  omapi发起关联，dhcpd查找lease的处理函数
+Input:	      omapi_object_t ** lp
+			  omapi_object_t * ld
+			  omapi_object_t * ref
+Output:       
+Return:       isc_result_t
+Caution : 	  核心思想是，从omshell接收值，使用这些值在内存中查找数据
+*********************************************************************/
 isc_result_t dhcp_lease_lookup 
 (
 	omapi_object_t **lp,
@@ -1403,8 +1414,12 @@ isc_result_t dhcp_host_stuff_values (omapi_object_t *c,
 	return ISC_R_SUCCESS;
 }
 
-isc_result_t dhcp_host_lookup (omapi_object_t **lp,
-			       omapi_object_t *id, omapi_object_t *ref)
+isc_result_t dhcp_host_lookup 
+(
+	omapi_object_t **lp,
+	omapi_object_t *id, 
+	omapi_object_t *ref
+)
 {
 	omapi_value_t *tv = (omapi_value_t *)0;
 	isc_result_t status;
@@ -1415,7 +1430,8 @@ isc_result_t dhcp_host_lookup (omapi_object_t **lp,
 
 	/* First see if we were sent a handle. */
 	status = omapi_get_value_str (ref, id, "handle", &tv);
-	if (status == ISC_R_SUCCESS) {
+	if (status == ISC_R_SUCCESS) 
+	{
 		status = omapi_handle_td_lookup (lp, tv -> value);
 
 		omapi_value_dereference (&tv, MDL);
@@ -1423,36 +1439,45 @@ isc_result_t dhcp_host_lookup (omapi_object_t **lp,
 			return status;
 
 		/* Don't return the object if the type is wrong. */
-		if ((*lp) -> type != dhcp_type_host) {
-			omapi_object_dereference (lp, MDL);
+		if ((*lp)->type != dhcp_type_host) 
+		{
+			omapi_object_dereference(lp, MDL);
 			return DHCP_R_INVALIDARG;
 		}
-		if (((struct host_decl *)(*lp)) -> flags & HOST_DECL_DELETED) {
+
+		if (((struct host_decl *)(*lp))->flags & HOST_DECL_DELETED) 
+		{
 			omapi_object_dereference (lp, MDL);
 		}
 	}
 
 	/* Now look for a client identifier. */
 	status = omapi_get_value_str (ref, id, "dhcp-client-identifier", &tv);
-	if (status == ISC_R_SUCCESS) {
+	if (status == ISC_R_SUCCESS) 
+	{
 		host = (struct host_decl *)0;
 		host_hash_lookup (&host, host_uid_hash,
-				  tv -> value -> u.buffer.value,
-				  tv -> value -> u.buffer.len, MDL);
-		omapi_value_dereference (&tv, MDL);
+				  tv->value->u.buffer.value,
+				  tv->value->u.buffer.len, MDL);
+		omapi_value_dereference(&tv, MDL);
 
-		if (*lp && *lp != (omapi_object_t *)host) {
+		if (*lp && *lp != (omapi_object_t *)host) 
+		{
 			omapi_object_dereference (lp, MDL);
 			if (host)
 				host_dereference (&host, MDL);
 			return DHCP_R_KEYCONFLICT;
-		} else if (!host || (host -> flags & HOST_DECL_DELETED)) {
+		} 
+		else if (!host || (host->flags & HOST_DECL_DELETED)) 
+		{
 			if (*lp)
-			    omapi_object_dereference (lp, MDL);
+			    omapi_object_dereference(lp, MDL);
 			if (host)
-				host_dereference (&host, MDL);
+				host_dereference(&host, MDL);
 			return ISC_R_NOTFOUND;
-		} else if (!*lp) {
+		}
+		else if (!*lp) 
+		{
 			/* XXX fix so that hash lookup itself creates
 			   XXX the reference. */
 			omapi_object_reference (lp,
@@ -1462,45 +1487,55 @@ isc_result_t dhcp_host_lookup (omapi_object_t **lp,
 	}
 
 	/* Now look for a hardware address. */
-	status = omapi_get_value_str (ref, id, "hardware-address", &tv);
-	if (status == ISC_R_SUCCESS) {
+	status = omapi_get_value_str(ref, id, "hardware-address", &tv);
+	if (status == ISC_R_SUCCESS) 
+	{
 		unsigned char *haddr;
 		unsigned int len;
 
-		len = tv -> value -> u.buffer.len + 1;
-		haddr = dmalloc (len, MDL);
-		if (!haddr) {
+		len = tv->value->u.buffer.len + 1;
+		haddr = dmalloc(len, MDL);
+		if (!haddr) 
+		{
 			omapi_value_dereference (&tv, MDL);
 			return ISC_R_NOMEMORY;
 		}
 
-		memcpy (haddr + 1, tv -> value -> u.buffer.value, len - 1);
-		omapi_value_dereference (&tv, MDL);
+		memcpy(haddr + 1, tv->value->u.buffer.value, len - 1);
+		omapi_value_dereference(&tv, MDL);
 
-		status = omapi_get_value_str (ref, id, "hardware-type", &tv);
-		if (status == ISC_R_SUCCESS) {
-			if (tv -> value -> type == omapi_datatype_data) {
-				if ((tv -> value -> u.buffer.len != 4) ||
-				    (tv -> value -> u.buffer.value[0] != 0) ||
-				    (tv -> value -> u.buffer.value[1] != 0) ||
-				    (tv -> value -> u.buffer.value[2] != 0)) {
+		status = omapi_get_value_str(ref, id, "hardware-type", &tv);
+		if (status == ISC_R_SUCCESS) 
+		{
+			if (tv->value->type == omapi_datatype_data) 
+			{
+				if ((tv->value->u.buffer.len != 4) ||
+				    (tv->value->u.buffer.value[0] != 0) ||
+				    (tv->value->u.buffer.value[1] != 0) ||
+				    (tv->value->u.buffer.value[2] != 0)) 
+				{
 					omapi_value_dereference (&tv, MDL);
 					dfree (haddr, MDL);
 					return DHCP_R_INVALIDARG;
 				}
 
-				haddr[0] = tv -> value -> u.buffer.value[3];
-			} else if (tv -> value -> type == omapi_datatype_int) {
-				haddr[0] = (unsigned char)
-					tv -> value -> u.integer;
-			} else {
-				omapi_value_dereference (&tv, MDL);
-				dfree (haddr, MDL);
+				haddr[0] = tv->value->u.buffer.value[3];
+			} 
+			else if (tv->value->type == omapi_datatype_int) 
+			{
+				haddr[0] = (unsigned char)tv->value->u.integer;
+			} 
+			else 
+			{
+				omapi_value_dereference(&tv, MDL);
+				dfree(haddr, MDL);
 				return DHCP_R_INVALIDARG;
 			}
 
 			omapi_value_dereference (&tv, MDL);
-		} else {
+		}
+		else
+		{
 			/* If no hardware-type is specified, default to
 			   ethernet.  This may or may not be a good idea,
 			   but Telus is currently relying on this behavior.
@@ -1509,10 +1544,11 @@ isc_result_t dhcp_host_lookup (omapi_object_t **lp,
 		}
 
 		host = (struct host_decl *)0;
-		host_hash_lookup (&host, host_hw_addr_hash, haddr, len, MDL);
-		dfree (haddr, MDL);
+		host_hash_lookup(&host, host_hw_addr_hash, haddr, len, MDL);
+		dfree(haddr, MDL);
 
-		if (*lp && *lp != (omapi_object_t *)host) {
+		if (*lp && *lp != (omapi_object_t *)host) 
+		{
 			omapi_object_dereference (lp, MDL);
 			if (host)
 				host_dereference (&host, MDL);
@@ -1610,19 +1646,22 @@ isc_result_t dhcp_host_lookup (omapi_object_t **lp,
 	return ISC_R_SUCCESS;
 }
 
-isc_result_t dhcp_host_create (omapi_object_t **lp,
-			       omapi_object_t *id)
+isc_result_t dhcp_host_create 
+(
+	omapi_object_t **lp,
+	omapi_object_t *id
+)
 {
 	struct host_decl *hp;
 	isc_result_t status;
 	hp = (struct host_decl *)0;
-	status = host_allocate (&hp, MDL);
+	status = host_allocate(&hp, MDL);
 	if (status != ISC_R_SUCCESS)
 		return status;
-	group_reference (&hp -> group, root_group, MDL);
-	hp -> flags = HOST_DECL_DYNAMIC;
-	status = omapi_object_reference (lp, (omapi_object_t *)hp, MDL);
-	host_dereference (&hp, MDL);
+	group_reference (&hp->group, root_group, MDL);
+	hp->flags = HOST_DECL_DYNAMIC;
+	status = omapi_object_reference(lp, (omapi_object_t *)hp, MDL);
+	host_dereference(&hp, MDL);
 	return status;
 }
 
@@ -2192,9 +2231,13 @@ isc_result_t dhcp_class_stuff_values (omapi_object_t *c,
 	return (class_stuff_values(c, id, h));
 }
 
-static isc_result_t class_lookup (omapi_object_t **lp,
-				  omapi_object_t *id, omapi_object_t *ref,
-				  omapi_object_type_t *typewanted)
+static isc_result_t class_lookup 
+(
+	omapi_object_t **lp,
+	omapi_object_t *id, 
+	omapi_object_t *ref,
+	omapi_object_type_t *typewanted
+)
 {
 	omapi_value_t *nv = NULL;
 	omapi_value_t *hv = NULL;
@@ -2209,7 +2252,8 @@ static isc_result_t class_lookup (omapi_object_t **lp,
 
 	/* see if we have a name */
 	status = omapi_get_value_str(ref, id, "name", &nv);
-	if (status == ISC_R_SUCCESS) {
+	if (status == ISC_R_SUCCESS) 
+	{
 		char *name = dmalloc(nv->value->u.buffer.len + 1, MDL);
 		if (name == NULL)
 			return (ISC_R_NOMEMORY);
@@ -2223,11 +2267,13 @@ static isc_result_t class_lookup (omapi_object_t **lp,
 
 		dfree(name, MDL);
 
-		if (class == NULL) {
+		if (class == NULL) 
+		{
 			return (ISC_R_NOTFOUND);
 		}
 
-		if (typewanted == dhcp_type_subclass) {
+		if (typewanted == dhcp_type_subclass) 
+		{
 			status = omapi_get_value_str(ref, id,
 						     "hashstring", &hv);
 			if (status != ISC_R_SUCCESS) {
@@ -2260,7 +2306,8 @@ static isc_result_t class_lookup (omapi_object_t **lp,
 		}
 
 		/* Don't return the object if the type is wrong. */
-		if (class->type != typewanted) {
+		if (class->type != typewanted) 
+		{
 			class_dereference(&class, MDL);
 			return (DHCP_R_INVALIDARG);
 		}
