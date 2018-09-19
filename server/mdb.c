@@ -3985,6 +3985,7 @@ void free_everything(void)
 
 	omapi_object_dereference((omapi_object_t **)&dhcp_control_object, MDL);
 
+	/* 清理全局class配置 */
 	for (lp = collections; lp; lp = lp->next) 
 	{
 	    if (lp->classes) 

@@ -388,20 +388,25 @@ static isc_result_t update_lease_flags(struct lease* lease,
 }
 
 
-isc_result_t dhcp_lease_get_value (omapi_object_t *h, omapi_object_t *id,
-				   omapi_data_string_t *name,
-				   omapi_value_t **value)
+isc_result_t dhcp_lease_get_value 
+(
+	omapi_object_t *h, 
+	omapi_object_t *id,
+	omapi_data_string_t *name,
+	omapi_value_t **value
+)
 {
 	struct lease *lease;
 	isc_result_t status;
 
-	if (h -> type != dhcp_type_lease)
+	if (h->type != dhcp_type_lease)
 		return DHCP_R_INVALIDARG;
+
 	lease = (struct lease *)h;
 
-	if (!omapi_ds_strcmp (name, "state"))
-		return omapi_make_int_value (value, name,
-					     (int)lease -> binding_state, MDL);
+	if (!omapi_ds_strcmp(name, "state"))
+		return omapi_make_int_value(value, name,
+					     (int)lease->binding_state, MDL);
 	else if (!omapi_ds_strcmp (name, "ip-address"))
 		return omapi_make_const_value (value, name,
 					       lease -> ip_addr.iabuf,

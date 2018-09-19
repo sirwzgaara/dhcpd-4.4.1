@@ -2520,7 +2520,8 @@ int parse_class_declaration
 	unsigned code;
 
 	token = next_token(&val, NULL, cfile);
-	if (token != STRING) {
+	if (token != STRING) 
+	{
 		parse_warn (cfile, "Expecting class name");
 		skip_to_semi (cfile);
 		return 0;
