@@ -320,8 +320,8 @@ isc_result_t conf_file_subparse
    lease-statements :== <nil>
    		     | lease-declaration
 		     | lease-declarations lease-declaration */
-
-isc_result_t lease_file_subparse (struct parse *cfile)
+/* 启动时读取租约文件 */
+isc_result_t lease_file_subparse(struct parse *cfile)
 {
 	const char *val;
 	enum dhcp_token token;
@@ -331,11 +331,14 @@ isc_result_t lease_file_subparse (struct parse *cfile)
 		token = next_token (&val, (unsigned *)0, cfile);
 		if (token == END_OF_FILE)
 			break;
-		if (token == LEASE) {
+        /* 若读取到了租约 */
+		if (token == LEASE) 
+        {
 			struct lease *lease = (struct lease *)0;
-			if (parse_lease_declaration (&lease, cfile)) {
-				enter_lease (lease);
-				lease_dereference (&lease, MDL);
+			if (parse_lease_declaration(&lease, cfile))
+            {
+				enter_lease(lease);
+				lease_dereference(&lease, MDL);
 			} else
 				parse_warn (cfile,
 					    "possibly corrupt lease file");
@@ -3545,7 +3548,11 @@ int parse_fixed_addr_param
 		     | CLASS identifier SEMI
 		     | DYNAMIC_BOOTP SEMI */
 
-int parse_lease_declaration (struct lease **lp, struct parse *cfile)
+int parse_lease_declaration
+(
+    struct lease **lp, 
+    struct parse *cfile
+)
 {
 	const char *val;
 	enum dhcp_token token;

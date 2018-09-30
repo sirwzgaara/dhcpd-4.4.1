@@ -376,24 +376,6 @@ void dhcpdiscover
 		s = (char *)0;
 	}
 
-	/* %Audit% This is log output. %2004.06.17,Safe%
-	 * If we truncate we hope the user can get a hint from the log.
-	 */
-#if defined(DHCPv6) && defined(DHCP4o6)
-	if (dhcpv4_over_dhcpv6 && (packet->dhcp4o6_response != NULL)) {
-		snprintf (msgbuf, sizeof msgbuf,
-			  "DHCP4o6 DHCPDISCOVER from %s %s%s%svia %s",
-			  (packet->raw->htype
-			   ? print_hw_addr (packet->raw->htype,
-					    packet->raw->hlen,
-					    packet->raw->chaddr)
-			   : (lease
-			      ? print_hex_1(lease->uid_len, lease->uid, 60)
-			      : "<no identifier>")),
-			  s ? "(" : "", s ? s : "", s ? ") " : "",
-			  piaddr(packet->client_addr));
-	} else
-#endif
 	snprintf(msgbuf, sizeof(msgbuf), "DHCPDISCOVER from %s %s%s%svia %s",
 		 (packet->raw->htype ? print_hw_addr(packet->raw->htype, packet->raw->hlen, packet->raw->chaddr)
 		  : (lease ? print_hex_1(lease->uid_len, lease->uid, 60) : "<no identifier>")), 
@@ -3409,20 +3391,6 @@ void ack_lease
 				(&lease->on_star.on_commit, MDL);
 	}
 
-#ifdef NSUPDATE
-	/* Perform DDNS updates, if configured to. */
-	if ((!offer || offer == DHCPACK) &&
-	    (!(oc = lookup_option (&server_universe, state -> options,
-				   SV_DDNS_UPDATES)) ||
-	     evaluate_boolean_option_cache (&ignorep, packet, lt,
-					    (struct client_state *)0,
-					    packet -> options,
-					    state -> options,
-					    &lt -> scope, oc, MDL))) {
-		ddns_updates(packet, lt, lease, NULL, NULL, state->options);
-	}
-#endif /* NSUPDATE */
-
 	/* Don't call supersede_lease on a mocked-up lease. */
 	/* 这种lease是固定的，不是pool的链表中，所以不能用supersede */
 	if (lease->flags & STATIC_LEASE) 
@@ -3446,6 +3414,7 @@ void ack_lease
 		}
 
 #if !defined(DELAYED_ACK)
+        /* 走这个if分支 */
 		/* Install the new information on 'lt' onto the lease at
 		 * 'lease'.  If this is a DHCPOFFER, it is a 'soft' promise,
 		 * if it is a DHCPACK, it is a 'hard' binding, so it needs

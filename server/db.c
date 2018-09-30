@@ -94,9 +94,10 @@ write_binding_scope(FILE *db_file, struct binding *bnd, char *prepend) {
 }
 
 /* Write the specified lease to the current lease database file. */
-
-int write_lease (lease)
-	struct lease *lease;
+int write_lease
+(
+    struct lease *lease
+)
 {
 	int errors = 0;
 	struct binding *b;

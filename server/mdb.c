@@ -308,7 +308,7 @@ Output:
 Return:       
 Caution : 	  
 *********************************************************************/
-isc_result_t enter_host 
+isc_result_t enter_host
 (
 	struct host_decl * hd, 
 	int dynamicp, 
@@ -4046,7 +4046,7 @@ void free_everything(void)
 			if (ic->shared_network) 
 			{
 			    if (ic->shared_network->interface)
-				interface_dereference(&ic->shared_network->interface, MDL);
+				    interface_dereference(&ic->shared_network->interface, MDL);
 			    shared_network_dereference(&ic->shared_network, MDL);
 			}
 			
