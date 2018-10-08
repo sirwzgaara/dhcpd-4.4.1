@@ -2300,7 +2300,7 @@ int lease_copy
 Func Name :   release_lease
 Date Created: 2018/06/04
 Author:  	  wangzhe
-Description:  释放特定租约并处理hash表
+Description:  释放特定租约并处理hash表，这里只处理通过池动态分配的租约
 Input:	      IN struct lease * lease
 			  IN struct packet * packet
 Output:       

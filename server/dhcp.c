@@ -880,7 +880,8 @@ void dhcprelease
 	   so let it go. */
 	/* release报文不应该设置这个字段，为了兼容老版本 */
 	if ((oc = lookup_option (&dhcp_universe, packet->options,
-				 DHO_DHCP_REQUESTED_ADDRESS))) {
+				 DHO_DHCP_REQUESTED_ADDRESS))) 
+    {
 		log_info ("DHCPRELEASE from %s specified requested-address.",
 		      print_hw_addr (packet -> raw -> htype,
 				     packet -> raw -> hlen,
@@ -956,27 +957,6 @@ void dhcprelease
 	strncpy(cstr, inet_ntoa (packet -> raw -> ciaddr), 15);
 	cstr[15] = '\0';
 
-	/* %Audit% This is log output. %2004.06.17,Safe%
-	 * If we truncate we hope the user can get a hint from the log.
-	 */
-#if defined(DHCPv6) && defined(DHCP4o6)
-	if (dhcpv4_over_dhcpv6 && (packet->dhcp4o6_response != NULL)) {
-		snprintf (msgbuf, sizeof msgbuf,
-			  "DHCP4o6 DHCPRELEASE of %s from %s %s%s%svia "
-			  "%s (%sfound)",
-			  cstr,
-			  (packet -> raw -> htype
-			   ? print_hw_addr (packet -> raw -> htype,
-					    packet -> raw -> hlen,
-					    packet -> raw -> chaddr)
-			   : (lease
-			      ? print_hex_1(lease->uid_len, lease->uid, 60)
-			      : "<no identifier>")),
-			  s ? "(" : "", s ? s : "", s ? ") " : "",
-			  piaddr(packet->client_addr),
-			  lease ? "" : "not ");
-	} else
-#endif
 	snprintf (msgbuf, sizeof msgbuf,
 		 "DHCPRELEASE of %s from %s %s%s%svia %s (%sfound)",
 		 cstr,
@@ -3396,7 +3376,7 @@ void ack_lease
 	if (lease->flags & STATIC_LEASE) 
 	{
 		/* Copy the hardware address into the static lease structure. */
-		lease->hardware_addr.hlen = packet->raw->hlen + 1;
+		lease->hardware_addr.hlen    = packet->raw->hlen + 1;
 		lease->hardware_addr.hbuf[0] = packet->raw->htype;
 		memcpy(&lease->hardware_addr.hbuf[1],
 			packet->raw->chaddr,
