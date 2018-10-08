@@ -2253,11 +2253,11 @@ void parse_host_declaration
 		return;
 	}
 
-	if (!parse_lbrace (cfile))
+	if (!parse_lbrace(cfile))
 		goto boom;
 
 	do {
-		token = peek_token (&val, (unsigned *)0, cfile);
+		token = peek_token(&val, (unsigned *)0, cfile);
 		if (token == RBRACE) 
 		{
 			skip_token(&val, (unsigned *)0, cfile);
@@ -2275,7 +2275,7 @@ void parse_host_declaration
 		{
 			dynamicp = 1;
 			skip_token(&val, (unsigned *)0, cfile);
-			if (!parse_semi (cfile))
+			if (!parse_semi(cfile))
 				break;
 			continue;
 		}
@@ -2486,7 +2486,7 @@ void parse_host_declaration
 				    isc_result_totext (status));
 	}
 	
-	host_dereference (&host, MDL);
+	host_dereference(&host, MDL);
 }
 
 /*********************************************************************

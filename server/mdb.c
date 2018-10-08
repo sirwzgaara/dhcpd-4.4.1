@@ -400,7 +400,7 @@ isc_result_t enter_host
 			host_hash_add (host_hw_addr_hash, hd->interface.hbuf,
 				       hd->interface.hlen, hd, MDL);
 		}
-		/* 若已经有这个硬件地址对应的主机了，加到链表的最后 */
+		/* 加到hash桶拉出来的链表的最后 */
 		else 
 		{
 			/* If there was already a host declaration for

@@ -331,6 +331,8 @@ void dhcpdiscover
 #endif
 
 	find_lease(&lease, packet, packet->shared_network, 0, &peer_has_leases, (struct lease *)0, MDL);
+
+    /* discover防护，每个客户端一定时间内只能发送一定数量的discover报文 */
 	if (dit && dit_count && lease && lease->cltt)
 	{
 		if (cur_time - lease->cltt < dit)
@@ -387,12 +389,6 @@ void dhcpdiscover
 	/* Sourceless packets don't make sense here. */
 	if (!packet->shared_network) 
 	{
-#if defined(DHCPv6) && defined(DHCP4o6)
-		if (dhcpv4_over_dhcpv6 && (packet->dhcp4o6_response != NULL)) {
-			log_info ("DHCP4o6 packet from unknown subnet: %s",
-				  piaddr(packet->client_addr));
-		} else
-#endif
 		log_info("Packet from unknown subnet: %s", inet_ntoa(packet->raw->giaddr));
 		goto out;
 	}
@@ -422,10 +418,6 @@ void dhcpdiscover
 		} 
 		else 
 		{
-#if defined (DEBUG_FIND_LEASE)
-		    log_debug("discarding %s - %s", piaddr(lease->ip_addr),
-			       binding_state_print (lease->binding_state));
-#endif
 		    lease_dereference(&lease, MDL);
 		}
 	}
@@ -3765,9 +3757,9 @@ void ack_lease
 	/* If this is a DHCPOFFER, ping the lease address before actually
 	   sending the offer. */
 	/* 若lease是free状态的，不用ping */
-	if (offer == DHCPOFFER && !(lease->flags & STATIC_LEASE) &&
-	    (((cur_time - lease_cltt) > 60) ||
-             (lease->binding_state == FTS_ABANDONED)) &&
+	if (offer == DHCPOFFER && 
+        !(lease->flags & STATIC_LEASE) &&
+	    (((cur_time - lease_cltt) > 60) || (lease->binding_state == FTS_ABANDONED)) &&
 	    (!(oc = lookup_option(&server_universe, state->options,
 				   SV_PING_CHECKS)) ||
 	     evaluate_boolean_option_cache(&ignorep, packet, lease,
@@ -4422,12 +4414,6 @@ int find_lease
 			mockup_lease(&fixed_lease, packet, share, hp);
 		}
 
-#if defined (DEBUG_FIND_LEASE)
-		if (fixed_lease) {
-			log_info ("Found host for client identifier: %s.",
-			      piaddr (fixed_lease -> ip_addr));
-		}
-#endif
 		if (hp) 
 		{
 			if (!fixed_lease) /* Save the host if we found one. */
@@ -4445,13 +4431,13 @@ int find_lease
 	   it with the hardware address... */
 	if (!fixed_lease && !host) 
 	{
+        /* 在host_hw_addr_hash中查找 */
 		if (find_hosts_by_haddr(&hp, packet->raw->htype,
 					 packet->raw->chaddr,
 					 packet->raw->hlen, MDL)) 
 		{
 			/* Remember if we know of this client. */
 			packet->known = 1;
-			/* 源码bug，在这里判host没意义 */
 			if (host)
 			{
 				host_dereference(&host, MDL);
@@ -4460,12 +4446,6 @@ int find_lease
 			host_reference(&host, hp, MDL);
 			host_dereference(&hp, MDL);
 			mockup_lease(&fixed_lease, packet, share, host);
-#if defined (DEBUG_FIND_LEASE)
-			if (fixed_lease) {
-				log_info ("Found host for link address: %s.",
-				      piaddr (fixed_lease -> ip_addr));
-			}
-#endif
 		}
 	}
 
@@ -4485,11 +4465,6 @@ int find_lease
 			host_reference(&host, hp, MDL);
 			host_dereference(&hp, MDL);
 			mockup_lease (&fixed_lease, packet, share, host);
-#if defined (DEBUG_FIND_LEASE)
-			if (fixed_lease) {
-				log_info ("Found host via host-identifier");
-			}
-#endif
 		}
 	}
 
@@ -4503,11 +4478,6 @@ int find_lease
 		if (ours)
 			*ours = 1;
 		strcpy(dhcp_message, "requested address is incorrect");
-#if defined (DEBUG_FIND_LEASE)
-		log_info ("Client's fixed-address %s doesn't match %s%s",
-			  piaddr (fixed_lease -> ip_addr), "request ",
-			  print_dotted_quads (cip.len, cip.iabuf));
-#endif
 		goto out;
 	}
 
@@ -4524,10 +4494,6 @@ int find_lease
 	while (uid_lease) 
 	{
 		isc_boolean_t do_release = !packet->raw->ciaddr.s_addr;
-#if defined (DEBUG_FIND_LEASE)
-		log_info ("trying next lease matching client id: %s",
-			  piaddr (uid_lease -> ip_addr));
-#endif
 
 #if defined (FAILOVER_PROTOCOL)
 		/*
@@ -4541,20 +4507,12 @@ int find_lease
 		if (uid_lease->binding_state != FTS_ACTIVE &&
 		    uid_lease->rewind_binding_state != FTS_ACTIVE &&
 		    !lease_mine_to_reallocate(uid_lease)) {
-#if defined (DEBUG_FIND_LEASE)
-			log_info("not active or not mine to allocate: %s",
-				 piaddr(uid_lease->ip_addr));
-#endif
 			goto n_uid;
 		}
 #endif
 
 		if (uid_lease->subnet->shared_network != share) 
 		{
-#if defined (DEBUG_FIND_LEASE)
-			log_info ("wrong network segment: %s",
-				  piaddr (uid_lease -> ip_addr));
-#endif
 			/* Allow multiple leases using the same UID
 			   on different subnetworks. */
 			do_release = ISC_FALSE;
@@ -4567,10 +4525,6 @@ int find_lease
 		    (uid_lease->pool->permit_list &&
 		     !permitted(packet, uid_lease->pool->permit_list))) 
 		{
-#if defined (DEBUG_FIND_LEASE)
-			log_info ("not permitted: %s",
-				  piaddr (uid_lease -> ip_addr));
-#endif
 		       n_uid:
 			if (uid_lease->n_uid)
 				lease_reference(&next, uid_lease->n_uid, MDL);
@@ -4588,11 +4542,6 @@ int find_lease
 		}
 		break;
 	}
-#if defined (DEBUG_FIND_LEASE)
-	if (uid_lease)
-		log_info ("Found lease for client id: %s.",
-		      piaddr (uid_lease -> ip_addr));
-#endif
 
 	/* Find a lease whose hardware address matches, whose client
 	 * identifier matches (or equally doesn't have one), that's
@@ -4602,16 +4551,12 @@ int find_lease
 	 * the first one found is the best one.
 	 */
 	/* 加一个字节用来保存硬件类型 */
-	h.hlen = packet->raw->hlen + 1;
+	h.hlen    = packet->raw->hlen + 1;
 	h.hbuf[0] = packet->raw->htype;
 	memcpy(&h.hbuf[1], packet->raw->chaddr, packet->raw->hlen);
 	find_lease_by_hw_addr(&hw_lease, h.hbuf, h.hlen, MDL);
 	while (hw_lease) 
 	{
-#if defined (DEBUG_FIND_LEASE)
-		log_info ("trying next lease matching hw addr: %s",
-			  piaddr (hw_lease -> ip_addr));
-#endif
 #if defined (FAILOVER_PROTOCOL)
 		/*
 		 * When we lookup a lease by chaddr, we know the MAC address
@@ -4625,10 +4570,6 @@ int find_lease
 		if (hw_lease->binding_state != FTS_ACTIVE &&
 		    hw_lease->rewind_binding_state != FTS_ACTIVE &&
 		    !lease_mine_to_reallocate(hw_lease)) {
-#if defined (DEBUG_FIND_LEASE)
-			log_info("not active or not mine to allocate: %s",
-				 piaddr(hw_lease->ip_addr));
-#endif
 			goto n_hw;
 		}
 #endif
@@ -4648,18 +4589,10 @@ int find_lease
 		     memcmp(hw_lease->uid, client_identifier.data,
 			     hw_lease->uid_len))) 
 		{
-#if defined (DEBUG_FIND_LEASE)
-			log_info ("wrong client identifier: %s",
-				  piaddr (hw_lease -> ip_addr));
-#endif
 			goto n_hw;
 		}
 		if (hw_lease->subnet->shared_network != share) 
 		{
-#if defined (DEBUG_FIND_LEASE)
-			log_info ("wrong network segment: %s",
-				  piaddr (hw_lease -> ip_addr));
-#endif
 			goto n_hw;
 		}
 		/* 判断访问和禁止列表 */
@@ -4668,10 +4601,6 @@ int find_lease
 		    (hw_lease->pool->permit_list &&
 		     !permitted(packet, hw_lease->pool->permit_list))) 
 		{
-#if defined (DEBUG_FIND_LEASE)
-			log_info ("not permitted: %s",
-				  piaddr (hw_lease -> ip_addr));
-#endif
 			if (!packet->raw->ciaddr.s_addr)
 				release_lease(hw_lease, packet);
 		       n_hw:
@@ -4687,11 +4616,6 @@ int find_lease
 		}
 		break;
 	}
-#if defined (DEBUG_FIND_LEASE)
-	if (hw_lease)
-		log_info ("Found lease for hardware address: %s.",
-		      piaddr (hw_lease -> ip_addr));
-#endif
 
 	/* Try to find a lease that's been allocated to the client's
 	   IP address. */
@@ -4700,11 +4624,6 @@ int find_lease
 	else if (cip.len)
 		find_lease_by_ip_addr(&ip_lease, cip, MDL);
 
-#if defined (DEBUG_FIND_LEASE)
-	if (ip_lease)
-		log_info ("Found lease for requested address: %s.",
-		      piaddr (ip_lease -> ip_addr));
-#endif
 
 	/* If ip_lease is valid at this point, set ours to one, so that
 	   even if we choose a different lease, we know that the address
@@ -4723,9 +4642,6 @@ int find_lease
 	{
 		if (ours)
 			*ours = 1;
-#if defined (DEBUG_FIND_LEASE)
-		log_info ("...but it was on the wrong shared network.");
-#endif
 		strcpy(dhcp_message, "requested address on bad subnet");
 		lease_dereference(&ip_lease, MDL);
 	}
@@ -4762,9 +4678,6 @@ int find_lease
 		/* 对于新的clinet，只有free状态和backup状态的lease可以被分配 */
 		if (ip_lease->binding_state != FTS_FREE && ip_lease->binding_state != FTS_BACKUP) 
 		{
-#if defined (DEBUG_FIND_LEASE)
-			log_info ("rejecting lease for requested address.");
-#endif
 			/* If we're rejecting it because the peer has
 			   it, don't set "ours", because we shouldn't NAK. */
 			if (ours && ip_lease->binding_state != FTS_ACTIVE)
@@ -4785,9 +4698,6 @@ int find_lease
 #endif
 	    packet->packet_type == DHCPDISCOVER) 
 	{
-#if defined (DEBUG_FIND_LEASE)
-		log_info("ip lease not active or not ours to offer.");
-#endif
 		lease_dereference(&ip_lease, MDL);
 	}
 
@@ -4856,9 +4766,6 @@ int find_lease
 
 		if (ip_lease && ip_lease != uid_lease) 
 		{
-#if defined (DEBUG_FIND_LEASE)
-			log_info ("requested address not available.");
-#endif
 			lease_dereference (&ip_lease, MDL);
 		}
 	}
@@ -4871,26 +4778,17 @@ int find_lease
 	/* Toss extra pointers to the same lease... */
 	if (hw_lease && hw_lease == uid_lease) 
 	{
-#if defined (DEBUG_FIND_LEASE)
-		log_info ("hardware lease and uid lease are identical.");
-#endif
 		lease_dereference(&hw_lease, MDL);
 	}
 	
 	if (ip_lease && ip_lease == hw_lease) 
 	{
 		lease_dereference(&hw_lease, MDL);
-#if defined (DEBUG_FIND_LEASE)
-		log_info ("hardware lease and ip lease are identical.");
-#endif
 	}
 	
 	if (ip_lease && ip_lease == uid_lease) 
 	{
 		lease_dereference (&uid_lease, MDL);
-#if defined (DEBUG_FIND_LEASE)
-		log_info ("uid lease and ip lease are identical.");
-#endif
 	}
 
 	/* Make sure the client is permitted to use the requested lease. */
@@ -4942,9 +4840,6 @@ int find_lease
 	   lease at all. */
 	if (packet->packet_type == DHCPREQUEST && !ip_lease && !fixed_lease) 
 	{
-#if defined (DEBUG_FIND_LEASE)
-		log_info ("no applicable lease found for DHCPREQUEST.");
-#endif
 		goto out;
 	}
 
@@ -4954,9 +4849,6 @@ int find_lease
 	{
 		lease_reference(&lease, fixed_lease, MDL);
 		lease_dereference(&fixed_lease, MDL);
-#if defined (DEBUG_FIND_LEASE)
-		log_info ("choosing fixed address.");
-#endif
 	}
 
 	/* If we got a lease that matched the ip address and don't have
@@ -4967,16 +4859,10 @@ int find_lease
 		{
 			if (!packet->raw->ciaddr.s_addr)
 				release_lease(ip_lease, packet);
-#if defined (DEBUG_FIND_LEASE)
-			log_info("not choosing requested address (!).");
-#endif
 			lease_dereference(&ip_lease, MDL);
 		} 
 		else 
 		{
-#if defined (DEBUG_FIND_LEASE)
-			log_info ("choosing lease on requested address.");
-#endif
 			lease_reference (&lease, ip_lease, MDL);
 			if (lease->host)
 				host_dereference(&lease->host, MDL);
@@ -5002,18 +4888,12 @@ int find_lease
 			    packet->packet_type == DHCPREQUEST &&
 			    uid_lease->binding_state == FTS_ACTIVE)
 				release_lease(uid_lease, packet);
-#if defined (DEBUG_FIND_LEASE)
-			log_info("not choosing uid lease.");
-#endif
 		} 
 		else 
 		{
 			lease_reference(&lease, uid_lease, MDL);
 			if (lease->host)
 				host_dereference(&lease->host, MDL);
-#if defined (DEBUG_FIND_LEASE)
-			log_info("choosing uid lease.");
-#endif
 		}
 		lease_dereference (&uid_lease, MDL);
 	}
@@ -5023,9 +4903,6 @@ int find_lease
 	{
 		if (lease) 
 		{
-#if defined (DEBUG_FIND_LEASE)
-			log_info ("not choosing hardware lease.");
-#endif
 		} 
 		else 
 		{
@@ -5045,16 +4922,9 @@ int find_lease
 				lease_reference(&lease, hw_lease, MDL);
 				if (lease->host)
 					host_dereference(&lease->host, MDL);
-#if defined (DEBUG_FIND_LEASE)
-				log_info ("choosing hardware lease.");
-#endif
 			} 
 			else 
 			{
-#if defined (DEBUG_FIND_LEASE)
-				log_info ("not choosing hardware lease: %s.",
-					  "uid mismatch");
-#endif
 			}
 		}
 		lease_dereference (&hw_lease, MDL);
@@ -5147,18 +5017,12 @@ int find_lease
 	if (host)
 		host_dereference (&host, MDL);
 
-	if (lease) {
-#if defined (DEBUG_FIND_LEASE)
-		log_info ("Returning lease: %s.",
-		      piaddr (lease -> ip_addr));
-#endif
-		lease_reference (lp, lease, file, line);
-		lease_dereference (&lease, MDL);
+	if (lease)
+    {
+		lease_reference(lp, lease, file, line);
+		lease_dereference(&lease, MDL);
 		return 1;
 	}
-#if defined (DEBUG_FIND_LEASE)
-	log_info ("Not returning a lease.");
-#endif
 	return 0;
 }
 
@@ -5166,7 +5030,7 @@ int find_lease
 Func Name 	 :  mockup_lease
 Date Created :  2018/06/04
 Author		 :  wangzhe
-Description	 :  初始化一个新的lease，本质是根据提供的host返回对应的lease
+Description	 :  产生一个固定租约，数据从host_decl中获取
 Input		 :  IN struct lease ** lp
 			    IN struct packet * packet
 			    IN struct shared_network * share
