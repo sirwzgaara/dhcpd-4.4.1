@@ -584,29 +584,10 @@ void dhcprequest
 	} 
 	else 
 	{
-		smbuf [0] = 0;
+		smbuf[0] = 0;
 		sip.len = 0;
 	}
 
-	/* %Audit% This is log output. %2004.06.17,Safe%
-	 * If we truncate we hope the user can get a hint from the log.
-	 */
-#if defined(DHCPv6) && defined(DHCP4o6)
-	if (dhcpv4_over_dhcpv6 && (packet->dhcp4o6_response != NULL)) {
-		snprintf (msgbuf, sizeof msgbuf,
-			  "DHCP4o6 DHCPREQUEST for %s%s from %s %s%s%svia %s",
-			  piaddr (cip), smbuf,
-			  (packet -> raw -> htype
-			   ? print_hw_addr (packet -> raw -> htype,
-					    packet -> raw -> hlen,
-					    packet -> raw -> chaddr)
-			   : (lease
-			      ? print_hex_1(lease->uid_len, lease->uid, 60)
-			      : "<no identifier>")),
-			  s ? "(" : "", s ? s : "", s ? ") " : "",
-			  piaddr(packet->client_addr));
-	} else
-#endif
 	snprintf (msgbuf, sizeof msgbuf,
 		 "DHCPREQUEST for %s%s from %s %s%s%svia %s",
 		 piaddr (cip), smbuf,
@@ -828,17 +809,17 @@ void dhcprequest
 	/* Otherwise, send the lease to the client if we found one. */
 	if (lease) 
 	{
-		ack_lease (packet, lease, DHCPACK, 0, msgbuf, ms_nulltp,
+		ack_lease(packet, lease, DHCPACK, 0, msgbuf, ms_nulltp,
 			   (struct host_decl *)0);
 	} 
 	else
-		log_info ("%s: unknown lease %s.", msgbuf, piaddr (cip));
+		log_info("%s: unknown lease %s.", msgbuf, piaddr(cip));
 
       out:
 	if (subnet)
-		subnet_dereference (&subnet, MDL);
+		subnet_dereference(&subnet, MDL);
 	if (lease)
-		lease_dereference (&lease, MDL);
+		lease_dereference(&lease, MDL);
 	return;
 }
 
@@ -2362,7 +2343,7 @@ void ack_lease
 	   REQUEST our offer, it will expire in 2 minutes, overriding the
 	   expire time in the currently in force lease.  We want the expire
 	   events to be executed at that point. */
-	/* 若leaes已经过期了，消除事件，否则需要保留事件 */
+	/* 若lease已经过期了，消除事件，否则需要保留事件 */
 	if (lease->ends <= cur_time && offer != DHCPOFFER) 
 	{
 		/* Get rid of any old expiry or release statements - by
@@ -2823,7 +2804,7 @@ void ack_lease
 		lt->flags &= ~BOOTP_LEASE;
 
 		default_lease_time = DEFAULT_DEFAULT_LEASE_TIME;
-		if ((oc = lookup_option (&server_universe, state->options, SV_DEFAULT_LEASE_TIME))) 
+		if ((oc = lookup_option(&server_universe, state->options, SV_DEFAULT_LEASE_TIME))) 
 		{
 			if (evaluate_option_cache (&d1, packet, lease,
 						   (struct client_state *)0,
@@ -3756,7 +3737,6 @@ void ack_lease
 
 	/* If this is a DHCPOFFER, ping the lease address before actually
 	   sending the offer. */
-	/* 若lease是free状态的，不用ping */
 	if (offer == DHCPOFFER && 
         !(lease->flags & STATIC_LEASE) &&
 	    (((cur_time - lease_cltt) > 60) || (lease->binding_state == FTS_ABANDONED)) &&
