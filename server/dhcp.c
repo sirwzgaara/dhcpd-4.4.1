@@ -358,7 +358,7 @@ void dhcpdiscover
 		{
 			lease->it_count = 1;
 		}
-	 }
+	}
 
 	/* 根据hostname是否可打印，给s赋值 */
 	if (lease && lease->client_hostname)
@@ -866,10 +866,11 @@ void dhcprelease
 	if (oc &&
 	    evaluate_option_cache (&data, packet, (struct lease *)0,
 				   (struct client_state *)0,
-				   packet -> options, (struct option_state *)0,
-				   &global_scope, oc, MDL)) {
-		find_lease_by_uid (&lease, data.data, data.len, MDL);
-		data_string_forget (&data, MDL);
+				   packet->options, (struct option_state *)0,
+				   &global_scope, oc, MDL)) 
+    {
+		find_lease_by_uid(&lease, data.data, data.len, MDL);
+		data_string_forget(&data, MDL);
 
 		/* See if we can find a lease that matches the IP address the client is claiming. */
 		/* 找到要release的lease */
@@ -976,7 +977,7 @@ void dhcprelease
       out:
 #endif
 	if (lease)
-		lease_dereference (&lease, MDL);
+		lease_dereference(&lease, MDL);
 }
 
 /*********************************************************************
@@ -1019,9 +1020,9 @@ void dhcpdecline
 		return;
 
 	cip.len = 4;
-	memcpy (cip.iabuf, data.data, 4);
-	data_string_forget (&data, MDL);
-	find_lease_by_ip_addr (&lease, cip, MDL);
+	memcpy(cip.iabuf, data.data, 4);
+	data_string_forget(&data, MDL);
+	find_lease_by_ip_addr(&lease, cip, MDL);
 
 	if (lease && lease->client_hostname) 
 	{
@@ -1030,28 +1031,10 @@ void dhcpdecline
 			s = lease->client_hostname;
 		else
 			s = "Hostname Unsuitable for Printing";
-	} else
+	}
+    else
 		s = (char *)0;
 
-	/* %Audit% This is log output. %2004.06.17,Safe%
-	 * If we truncate we hope the user can get a hint from the log.
-	 */
-#if defined(DHCPv6) && defined(DHCP4o6)
-	if (dhcpv4_over_dhcpv6 && (packet->dhcp4o6_response != NULL)) {
-		snprintf (msgbuf, sizeof msgbuf,
-			  "DHCP4o6 DHCPDECLINE of %s from %s %s%s%svia %s",
-			  piaddr (cip),
-			  (packet -> raw -> htype
-			   ? print_hw_addr (packet -> raw -> htype,
-					    packet -> raw -> hlen,
-					    packet -> raw -> chaddr)
-			   : (lease
-			      ? print_hex_1(lease->uid_len, lease->uid, 60)
-			      : "<no identifier>")),
-			  s ? "(" : "", s ? s : "", s ? ") " : "",
-			  piaddr(packet->client_addr));
-	} else
-#endif
 	snprintf (msgbuf, sizeof msgbuf,
 		 "DHCPDECLINE of %s from %s %s%s%svia %s",
 		 piaddr (cip),
@@ -1078,7 +1061,8 @@ void dhcpdecline
 					    NULL, NULL);
 
 	/* Execute statements in the class scopes. */
-	for (i = packet -> class_count; i > 0; i--) {
+	for (i = packet -> class_count; i > 0; i--) 
+    {
 		execute_statements_in_scope
 			(NULL, packet, NULL, NULL, packet->options, options,
 			 &global_scope, packet->classes[i - 1]->group,
@@ -1093,32 +1077,36 @@ void dhcpdecline
 					   packet -> options, options,
 					   &lease -> scope, oc, MDL)) {
 	    /* If we found a lease, mark it as unusable and complain. */
-	    if (lease) {
+	    if (lease) 
+        {
 #if defined (FAILOVER_PROTOCOL)
-		if (lease -> pool && lease -> pool -> failover_peer) {
-		    dhcp_failover_state_t *peer =
-			    lease -> pool -> failover_peer;
-		    if (peer -> service_state == not_responding ||
-			peer -> service_state == service_startup) {
-			if (!ignorep)
-			    log_info ("%s: ignored%s",
-				      peer -> name, peer -> nrr);
-			goto out;
-		    }
+		    if (lease -> pool && lease -> pool -> failover_peer) 
+            {
+    		    dhcp_failover_state_t *peer =
+    			    lease -> pool -> failover_peer;
+    		    if (peer -> service_state == not_responding ||
+    			peer -> service_state == service_startup) {
+    			if (!ignorep)
+    			    log_info ("%s: ignored%s",
+    				      peer -> name, peer -> nrr);
+    			goto out;
+    		    }
 
-		    /* DHCPDECLINE messages are broadcast, so we can safely
-		       ignore the DHCPDECLINE if the peer has the lease.
-		       XXX Of course, at this point that information has been
-		       lost. */
-		}
+    		    /* DHCPDECLINE messages are broadcast, so we can safely
+    		       ignore the DHCPDECLINE if the peer has the lease.
+    		       XXX Of course, at this point that information has been
+    		       lost. */
+    		}
 #endif
-
-		abandon_lease (lease, "declined.");
-		status = "abandoned";
-	    } else {
-		status = "not found";
+	        abandon_lease(lease, "declined.");
+	        status = "abandoned";
 	    }
-	} else
+        else 
+        {
+		    status = "not found";
+	    }
+	}
+    else
 	    status = "ignored";
 
 	if (!ignorep)
@@ -1128,9 +1116,9 @@ void dhcpdecline
       out:
 #endif
 	if (options)
-		option_state_dereference (&options, MDL);
+		option_state_dereference(&options, MDL);
 	if (lease)
-		lease_dereference (&lease, MDL);
+		lease_dereference(&lease, MDL);
 }
 
 #if defined(RELAY_PORT)
@@ -1543,9 +1531,6 @@ void dhcpinform
 	 * associated with its group. Whether the host decl
 	 * struct is old or not. */
 	if (host) {
-#if defined (DEBUG_INFORM_HOST)
-		log_info ("dhcpinform: applying host (group) options");
-#endif
 		execute_statements_in_scope(NULL, packet, NULL, NULL,
 					    packet->options, options,
 					    &global_scope, host->group,
@@ -2317,6 +2302,7 @@ void ack_lease
 	/* If the lease carries a host record, remember it. */
 	if (hp)
 		host_reference(&host, hp, MDL);
+    /* 这种是固定租约的情况 */
 	else if (lease->host)
 		host_reference(&host, lease->host, MDL);
 
@@ -2362,7 +2348,7 @@ void ack_lease
 
 	/* 若subnet和pool下有相同的配置，比如min-lease-time，那么pool下的生效 */
 	/* Execute statements in scope starting with the subnet scope. */
-	execute_statements_in_scope (NULL, packet, lease,
+	execute_statements_in_scope(NULL, packet, lease,
 				     NULL, packet->options,
 				     state->options, &lease->scope,
 				     lease->subnet->group, NULL, NULL);
@@ -2615,6 +2601,7 @@ void ack_lease
 
 	/* If we have a host_decl structure, run the options associated
 	   with its group.  Whether the host decl struct is old or not. */
+	/* 比如dhcpd.conf中host固定地址配置中的option配置，默认租约之类的东西 */
 	if (host)
 		execute_statements_in_scope (NULL, packet, lease, NULL,
 					     packet->options, state->options,
@@ -5077,7 +5064,7 @@ int mockup_lease
 	lease->hardware_addr = rhp->interface;
 	lease->starts 		 = MIN_TIME;
 	lease->cltt 		 = MIN_TIME;
-	lease->end 			 = MIN_TIME;
+	lease->ends			 = MIN_TIME;
 	lease->flags         = STATIC_LEASE;
 	lease->binding_state = FTS_FREE;
 

@@ -107,14 +107,15 @@ int write_lease
 	/* If the lease file is corrupt, don't try to write any more leases
 	   until we've written a good lease file. */
 	if (lease_file_is_corrupt)
-		if (!new_lease_file (0))
+		if (!new_lease_file(0))
 			return 0;
 
 	if (counting)
 		++count;
 	errno = 0;
-	fprintf (db_file, "lease %s {", piaddr (lease -> ip_addr));
-	if (errno) {
+	fprintf(db_file, "lease %s {", piaddr (lease -> ip_addr));
+	if (errno) 
+    {
 		++errors;
 	}
 
@@ -287,11 +288,12 @@ int write_lease
 	if (errno)
 		++errors;
 
-	if (errors) {
-		log_info ("write_lease: unable to write lease %s",
-		      piaddr (lease -> ip_addr));
+	if (errors) 
+    {
+		log_info("write_lease: unable to write lease %s",
+		      piaddr(lease->ip_addr));
 		lease_file_is_corrupt = 1;
-        }
+    }
 
 	return !errors;
 }

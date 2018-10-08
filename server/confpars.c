@@ -2142,7 +2142,8 @@ void parse_pool_statement
 
 		/* Okay, we can merge these two pools.    All we have to
 		   do is fix up the leases, which all point to their pool. */
-		for (lp = lpchain; lp; lp = lp->next) {
+		for (lp = lpchain; lp; lp = lp->next)
+        {
 			pool_dereference(&lp->pool, MDL);
 			pool_reference(&lp->pool, pp, MDL);
 		}
@@ -2160,7 +2161,8 @@ void parse_pool_statement
 	/* If we didn't succeed in merging this pool into another, put
 	   it on the list. */
 	/* 和subnet与shared_network不同，pool不是加到链表头，而是加到链表尾 */
-	if (!pp) {
+	if (!pp) 
+    {
 		p = &pool->shared_network->pools;
 		for (; *p; p = &((*p)->next))
 			;
