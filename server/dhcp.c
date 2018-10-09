@@ -847,7 +847,6 @@ void dhcprelease
 	const char *s;
 	char msgbuf[1024], cstr[16]; /* XXX */
 
-
 	/* DHCPRELEASE must not specify address in requested-address
 	   option, but old protocol specs weren't explicit about this,
 	   so let it go. */

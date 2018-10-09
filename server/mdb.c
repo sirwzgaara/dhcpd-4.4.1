@@ -3217,7 +3217,7 @@ int write_leases ()
 	int num_written;
 
 	/* write all the dynamically-created class declarations. */
-	if (collections->classes) 
+	if (collections->classes)
 	{
 		numclasseswritten = 0;
 		for (colp = collections ; colp; colp = colp->next) 

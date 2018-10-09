@@ -979,6 +979,7 @@ struct host_decl {
 	   to use when trying to look up an option.  We store the
 	   value here. */
 	int relays;
+    time_t ends;
 };
 
 struct permit {
