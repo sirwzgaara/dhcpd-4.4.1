@@ -33,8 +33,10 @@
 # define send_packet trace_packet_send
 #endif
 
-void bootp (packet)
-	struct packet *packet;
+void bootp
+(
+    struct packet *packet
+)
 {
 	int result;
 	struct host_decl *hp = (struct host_decl *)0;
@@ -49,7 +51,7 @@ void bootp (packet)
 	unsigned i;
 	struct data_string d1;
 	struct option_cache *oc;
-	char msgbuf [1024];
+	char msgbuf[1024];
 	int ignorep;
 	int peer_has_leases = 0;
 
