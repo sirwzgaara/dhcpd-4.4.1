@@ -1889,57 +1889,57 @@ isc_result_t dhcp_failover_state_transition
 
 isc_result_t dhcp_failover_set_service_state (dhcp_failover_state_t *state)
 {
-	switch (state -> me.state) {
+	switch (state->me.state) {
 	      case unknown_state:
-		state -> service_state = not_responding;
-		state -> nrr = " (my state unknown)";
+		state->service_state = not_responding;
+		state->nrr = " (my state unknown)";
 		break;
 
 	      case partner_down:
-		state -> service_state = service_partner_down;
-		state -> nrr = "";
+		state->service_state = service_partner_down;
+		state->nrr = "";
 		break;
 
 	      case normal:
-		state -> service_state = cooperating;
-		state -> nrr = "";
+		state->service_state = cooperating;
+		state->nrr = "";
 		break;
 
 	      case communications_interrupted:
-		state -> service_state = not_cooperating;
-		state -> nrr = "";
+		state->service_state = not_cooperating;
+		state->nrr = "";
 		break;
 
 	      case resolution_interrupted:
 	      case potential_conflict:
 	      case conflict_done:
-		state -> service_state = not_responding;
-		state -> nrr = " (resolving conflicts)";
+		state->service_state = not_responding;
+		state->nrr = " (resolving conflicts)";
 		break;
 
 	      case recover:
-		state -> service_state = not_responding;
-		state -> nrr = " (recovering)";
+		state->service_state = not_responding;
+		state->nrr = " (recovering)";
 		break;
 
 	      case shut_down:
-		state -> service_state = not_responding;
-		state -> nrr = " (shut down)";
+		state->service_state = not_responding;
+		state->nrr = " (shut down)";
 		break;
 
 	      case paused:
-		state -> service_state = not_responding;
-		state -> nrr = " (paused)";
+		state->service_state = not_responding;
+		state->nrr = " (paused)";
 		break;
 
 	      case recover_wait:
-		state -> service_state = not_responding;
-		state -> nrr = " (recover wait)";
+		state->service_state = not_responding;
+		state->nrr = " (recover wait)";
 		break;
 
 	      case recover_done:
-		state -> service_state = not_responding;
-		state -> nrr = " (recover done)";
+		state->service_state = not_responding;
+		state->nrr = " (recover done)";
 		break;
 
 	      case startup:
@@ -1955,20 +1955,20 @@ isc_result_t dhcp_failover_set_service_state (dhcp_failover_state_t *state)
 	/* Some peer states can require us not to respond, even if our
 	   state doesn't. */
 	/* XXX hm.   I suspect this isn't true anymore. */
-	if (state -> service_state != not_responding) 
+	if (state->service_state != not_responding) 
 	{
-		switch (state -> partner.state) 
+		switch (state->partner.state) 
 		{
 		      case partner_down:
-			state -> service_state = not_responding;
-			state -> nrr = " (peer demands: recovering)";
+			state->service_state = not_responding;
+			state->nrr = " (peer demands: recovering)";
 			break;
 
 		      case potential_conflict:
 		      case conflict_done:
 		      case resolution_interrupted:
-			state -> service_state = not_responding;
-			state -> nrr = " (peer demands: resolving conflicts)";
+			state->service_state = not_responding;
+			state->nrr = " (peer demands: resolving conflicts)";
 			break;
 
 			/* Other peer states don't affect our behaviour. */

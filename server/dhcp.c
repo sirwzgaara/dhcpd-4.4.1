@@ -409,6 +409,7 @@ void dhcpdiscover
 		 * point, then it was last active with the same client.  We
 		 * can safely re-activate the lease with this client.
 		 */
+		/* 检查这个地址是否是failover本端的 */
 		if (lease->binding_state == FTS_ACTIVE || lease->rewind_binding_state == FTS_ACTIVE ||
 		    lease_mine_to_reallocate(lease)) 
 		{
@@ -450,7 +451,7 @@ void dhcpdiscover
 			log_info("%s: not responding%s", msgbuf, peer->nrr);
 			goto out;
 		}
-	} 
+	}
 	else
 	{
 		peer = (dhcp_failover_state_t *)0;
